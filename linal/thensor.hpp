@@ -13,6 +13,7 @@ namespace linal
 {
 template <typename T, int _dim> class thensor;
 template <typename T, int _dim>  thensor<T,_dim> operator+(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
+template <typename T, int _dim>  thensor<T,_dim> operator*(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
 template <typename T, int _dim>  thensor<T,_dim> operator-(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
 template <typename T, int _dim>  thensor<T,_dim> operator&(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
 template <typename T, int _dim>  thensor<T,_dim> operator|(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
@@ -20,6 +21,10 @@ template <typename T, int _dim>  thensor<T,_dim> operator^(const thensor<T,_dim>
 template <typename T, int _dim>  bool operator==(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
 template <typename T, int _dim>  bool operator!=(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
 template <typename T, int _dim>  std::ostream &operator<<(std::ostream& os, const thensor<T,_dim>& th);
+
+template<typename T> thensor<T,2> matmul (const thensor<T,2>& left, const thensor<T,2>& right);
+template<typename T> thensor<T,2> matmul (const thensor<T,1>& left, const thensor<T,1>& right);
+template<typename T> thensor<T,2> transpose(const thensor<T,2>& left);
 
 template <typename T> void default_deleter(T *ptr)
 {
@@ -45,6 +50,7 @@ public:
     friend  thensor<T,_dim> operator&<T>(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
     friend  thensor<T,_dim> operator|<T>(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
     friend  thensor<T,_dim> operator^<T>(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
+    friend  thensor<T,_dim> operator*<T>(const thensor<T,_dim>& left, const thensor<T,_dim>& right);
     friend  std::ostream &operator<< <T>(std::ostream& os, const thensor<T,_dim>& th);
     
     template <typename U, typename S,int d> friend  thensor<S,d> operator*(const U& left, const thensor<S, d>& right);
@@ -58,9 +64,11 @@ public:
     thensor<T,_dim>& operator=(const thensor<T,_dim>& right);
     thensor<T,_dim>& operator=(thensor<T,_dim>&& right);
     thensor(const int* shapes, T* data);
-    thensor<T,_dim-1> operator[](int idx);
+    thensor<T,_dim-1> operator[](int idx) const;
     int size() const { return _size; };
     int dim() const { return _dim;}
+    const T* data() const{ return _data.get();}
+    T* data() { return _data.get();}
     const std::unique_ptr<int[]> & shape() const {return _shape;}
     T dot(const thensor<T,_dim> &right);
     thensor() = default;
@@ -104,12 +112,12 @@ template <typename T, int _dim>
 inline thensor<T,_dim>::thensor(const thensor<T,_dim> & vec): _data(nullptr, default_deleter)
 {
     _data = std::unique_ptr<T[], void(*)(T*)>(new T[vec.size()], default_deleter);
-    _shape = std::unique_ptr<int[]>(new int[vec._dim]);
+    _shape = std::unique_ptr<int[]>(new int[_dim]);
     for (int i = 0; i < vec.size(); i++)
     {
         _data[i] = vec._data[i];
     }
-    for (int i =0; i < vec.dim; i++)
+    for (int i =0; i < _dim; i++)
     {
         _shape[i] = vec._shape[i];
     }
@@ -156,7 +164,7 @@ thensor<T,_dim>& thensor<T,_dim>::operator=(thensor<T,_dim>&& right)
     return *this;
 }
 template <typename T, int _dim> 
-inline thensor<T,_dim-1> thensor<T,_dim>::operator[](int idx)
+inline thensor<T,_dim-1> thensor<T,_dim>::operator[](int idx) const
 {
     assert(idx<_size);
   
@@ -219,7 +227,7 @@ thensor<T,_dim> operator-(const thensor<T,_dim>& left, const thensor<T,_dim>& ri
 {
     assert(left.size() == right.size());
 
-    thensor<T,_dim> res(left._dim,left._shape);
+    thensor<T,_dim> res(left._shape);
     for (int i = 0; i < left.size(); i++)
     {
         res._data[i] = left._data[i] - right._data[i];
@@ -231,7 +239,7 @@ thensor<T,_dim> operator&(const thensor<T,_dim>& left, const thensor<T,_dim>& ri
 {
     assert(left.size() == right.size());
     
-    thensor<T,_dim> res(left._dim,left._shape);
+    thensor<T,_dim> res(left._shape);
     for (int i = 0; i < left.size(); i++)
     {
         res._data[i] = left._data[i] & right._data[i];
@@ -244,7 +252,7 @@ thensor<T,_dim> operator|(const thensor<T,_dim>& left, const thensor<T,_dim>& ri
     assert(left.size() == right.size());
     
 
-    thensor<T,_dim> res(left._dim,left._shape);
+    thensor<T,_dim> res(left._shape);
     for (int i = 0; i < left.size(); i++)
     {
         res._data[i] = left._data[i] | right._data[i];
@@ -257,7 +265,7 @@ thensor<T,_dim> operator^(const thensor<T,_dim>& left, const thensor<T,_dim>& ri
     assert(left.size() == right.size());
     
 
-    thensor<T,_dim> res(left._dim,left._shape);
+    thensor<T,_dim> res(left._shape);
     for (int i = 0; i < left.size(); i++)
     {
         res._data[i] = left._data[i] ^ right._data[i];
@@ -265,6 +273,18 @@ thensor<T,_dim> operator^(const thensor<T,_dim>& left, const thensor<T,_dim>& ri
     return res;
 }
 
+template <typename T, int _dim>
+thensor<T,_dim> operator*(const thensor<T,_dim>& left, const thensor<T,_dim>& right)
+{
+  assert(left.size() == right.size());
+  
+  thensor<T,_dim> res(left._shape);
+  for (int i = 0; i < left.size(); i++)
+  {
+      res._data[i] = left._data[i] * right._data[i];
+  }
+  return res;
+}
 
 template<typename U, typename S, int _dim>
 inline thensor<S,_dim> operator*(const U & left, const thensor<S,_dim>& right)
@@ -348,7 +368,7 @@ thensor<T,_dim>::thensor(const int* shapes, T *data)
   
   
   
-
+template <typename T>  thensor<T,1> operator*(const thensor<T,1>& left, const thensor<T,2>& right);
 
 template <typename T>
 class thensor<T,1>
@@ -364,6 +384,7 @@ public:
   friend  thensor<T,1> operator&<T>(const thensor<T,1>& left, const thensor<T,1>& right);
   friend  thensor<T,1> operator|<T>(const thensor<T,1>& left, const thensor<T,1>& right);
   friend  thensor<T,1> operator^<T>(const thensor<T,1>& left, const thensor<T,1>& right);
+  friend  thensor<T,1> operator*<T>(const thensor<T,1>& left, const thensor<T,1>& right);
   template <typename U, typename S,int d> friend  thensor<S,d> operator*(const U& left, const thensor<S, d>& right);
   friend  bool operator==<T>(const thensor<T,1>& left, const thensor<T,1>& right);
   friend  bool operator!=<T>(const thensor<T,1>& left, const thensor<T,1>& right);
@@ -376,10 +397,12 @@ public:
   thensor<T,1>& operator=(const thensor<T,1>& right);
   thensor<T,1>& operator=(thensor<T,1>&& right);
   thensor(const int* shapes, T* data);
-  T& operator[](int idx);
+  T& operator[](int idx) const;
   int size() const { return _size; };
-
+  const T* data() const{ return _data.get();}
+  T* data() { return _data.get();}
   T dot(const thensor<T,1> &right);
+  const std::unique_ptr<int[]> & shape() const {return _shape;}
   thensor() = default;
   thensor(int size);
   thensor(const std::vector<int>& shapes );
@@ -392,7 +415,7 @@ public:
 template <typename T>
 inline thensor<T,1>::thensor(int size) : _size(size),  _data(nullptr, default_deleter)
 {
-    assert(size>0);
+    //assert(size>0);
     _data = std::unique_ptr<T[], void(*)(T*)>(new T[size], default_deleter);
     _shape = std::unique_ptr<int[]> (new int[1]);
     _shape[0]= size;
@@ -442,7 +465,7 @@ inline thensor<T,1>& thensor<T,1>::operator=(const thensor<T,1>& right)
   {
       return *this;
   }
-  _data = std::unique_ptr<T[]>(new T[right.size()]);
+  _data = std::unique_ptr<T[], void(*)(T*)>(new T[right.size()], default_deleter);
   for (int i = 0; i < right.size(); i++)
   {
       _data[i] = right._data[i];
@@ -462,7 +485,7 @@ thensor<T,1>& thensor<T,1>::operator=(thensor<T,1>&& right)
   return *this;
 }
 template <typename T>
-inline T& thensor<T,1>::operator[](int idx)
+inline T& thensor<T,1>::operator[](int idx) const
 {
   assert(idx<_size);
   return  _data[idx];
@@ -558,7 +581,94 @@ std::ostream &operator<<(std::ostream &os, const thensor<T, _dim> &th)
   return os;
 }
 
-
+  template<typename T>
+  thensor<T, 1> operator*(const thensor<T, 1> &left, const thensor<T, 2> &right)
+  {
+      assert(left.shape()[0] == right.shape()[0]);
+      int outShape = right.shape()[1];
+      int inShape = left.shape()[0];
+      thensor<T,1> resVec(outShape);
+      T*  res = resVec.data();
+      const T* vec = left.data();
+      const T* src = right.data();
+      for (int j =0 ; j < outShape; j++)
+      {
+            res[j] = T();
+      }
+      for (int i =0; i < inShape; i++)
+      {
+          const T& t =vec[i];
+          for (int j =0 ; j < outShape; j++,src++)
+          {
+              res[j]+=t*(*src);
+          }
+      }
+      return resVec;
+  }
+  
+  template<typename T>
+  thensor<T, 1> operator*(const thensor<T, 2> &left, const thensor<T, 1> &right)
+  {
+      assert(left.shape()[1] == right.shape()[0]);
+      int outShape = left.shape()[0];
+      int inShape = right.shape()[0];
+      thensor<T,1> resVec(outShape);
+      T*  res = resVec.data();
+      const T* vec = right.data();
+      const T* src = left.data();
+      for (int i =0; i < outShape; i++)
+      {
+          T t= T();
+          
+          for (int j =0 ; j < inShape; j++,src++)
+          {
+              t+=vec[j]*(*src);
+          }
+          res[i] = t;
+      }
+      return resVec;
+  }
+  
+  
+  template<typename T>
+  thensor<T, 2> transpose(const thensor<T, 2> &left)
+  {
+      auto& shp = left.shape();
+      thensor<T,2> res({shp[1],shp[0]});
+      const T* col = left.data();
+      T* dst = res.data();
+      for (int i = 0 ; i < shp[1]; i++,col++)
+      {
+          const T* src =col;
+          for (int j = 0; j < shp[0]; j++,src+=shp[1],dst++)
+          {
+              *dst = *src;
+          }
+      }
+      
+      return res;
+  }
+  
+  template<typename T>
+  thensor<T,2> matmul (const thensor<T,1>& left, const thensor<T,1>& right)
+  {
+      int shp0 = right.size();
+      int shp1 = left.size();
+      thensor<T,2> res({shp0, shp1});
+      T* dst = res.data();
+      const T* l = left.data();
+      const T* r = right.data();
+      
+      for(int i = 0; i < shp0; i++)
+      {
+          for(int j = 0; j < shp1; j++, dst++)
+          {
+              *dst = l[j]*r[i];
+          }
+      }
+    
+      return res;
+  }
 }
 
 #endif //LIGHTY_VECTOR_HPP
