@@ -59,7 +59,7 @@ public:
 
 Dense1D<float, float> ::Dense1D(int inputSize, int outputSize) :
 inputSize(inputSize), outputSize(outputSize), _weights({outputSize,inputSize}),
-_bias({outputSize})
+_bias(outputSize)
 {
     //dense_layer_number_that_garantee_non_repeateble_random_seed_for_random_engine
     static unsigned denseID =0;
