@@ -20,12 +20,12 @@ class Layers
 {
 protected:
     bool training = true;
-    linal::thensor<T,1> input;
+
 public:
     virtual void forward(const linal::thensor<T,1> &src, linal::thensor<S,1> &dst) = 0;
     //http://neuralnetworksanddeeplearning.com/chap2.html
     virtual void backward(const linal::thensor<S,1> &deltaLower, linal::thensor<T,1> &deltaUpper) = 0;
-    Layers(): input(){};
+    Layers() = default;
     virtual ~Layers() = default;
     void set_mode(TrainigMode mode){training = mode;}
 };
@@ -42,6 +42,7 @@ public:
 template <>
 class Dense1D<float, float> final : public Layers<float,float>
 {
+    linal::thensor<float,1> input;
     int inputSize = 0;
     int outputSize = 0;
     fmat _weights;
@@ -59,7 +60,7 @@ public:
 
 Dense1D<float, float> ::Dense1D(int inputSize, int outputSize) :
 inputSize(inputSize), outputSize(outputSize), _weights({outputSize,inputSize}),
-_bias(outputSize)
+_bias(outputSize),input()
 {
     //dense_layer_number_that_garantee_non_repeateble_random_seed_for_random_engine
     static unsigned denseID =0;
@@ -98,20 +99,24 @@ void Dense1D<float, float>::backward(const fvec &deltaLower, fvec &deltaUpper)
 template <typename T, typename S>
 class Relu1D final : Layers<T,S>
 {
+private:
+    linal::thensor<T,1> input;
 public:
     void forward(const linal::thensor<T,1> &src, linal::thensor<S,1> &dst){};
     void backward(const linal::thensor<T,1> &src, linal::thensor<S,1> &dst){};
-    Relu1D() { throw std::logic_error{"Invalid template type. Use float instead."};};
+    Relu1D():input() { throw std::logic_error{"Invalid template type. Use same input and output instead."};};
     ~Relu1D() final  = default;
 };
 
 template <typename T>
 class Relu1D<T, T> final : public Layers<T,T>
 {
+private:
+    linal::thensor<T,1> input;
 public:
     void forward(const linal::thensor<T,1>  &src, linal::thensor<T,1> &dst) final;
     void backward(const linal::thensor<T,1> &deltaLower, linal::thensor<T,1> &deltaUpper);
-    Relu1D() = default;
+    Relu1D():input(){};
     ~Relu1D() final  = default;
 };
 

@@ -3,4 +3,4 @@ project(Lighty)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(Lighty main.cpp Layers.hpp linal/thensor.hpp linal/thensor.hpp Losses.hpp linal/thensor_data.hpp linal/thensor.hpp)
+add_executable(Lighty main.cpp tests/base.cpp )

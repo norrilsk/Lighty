@@ -85,7 +85,7 @@ namespace linal
       
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
-      void wrap(T *data, const std::vector<int> &shapes, int size) { _data.construct(data, shapes, size); };
+      void wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes); };
       
       thensor<T, _dim> copy()
       {
@@ -141,7 +141,7 @@ namespace linal
       
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
-      void wrap(T *data, const std::vector<int> &shapes, int size) { _data.construct(data, shapes, size); };
+      void wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes); };
       
       thensor<T, 1> copy()
       {
@@ -163,9 +163,9 @@ namespace linal
       bool res = true;
       const T *lhs = left.data();
       const T *rhs = right.data();
-      for (int i = 0; i < left.size(), res; i++)
+      for (int i = 0; i < left.size(); i++)
       {
-          res &= lhs[i] == rhs[i];
+          res &= (lhs[i] == rhs[i]);
           if (!res)
               return false;
       }
@@ -284,6 +284,34 @@ namespace linal
   }
   
   template<typename T>
+  thensor<T, 2> matmul(const thensor<T, 2> &left, const thensor<T, 2> &right)
+  {
+      const T* lhs = left.data();
+      const T* rhs = right.data();
+      int M = left.shape()[0];
+      int N = right.shape()[1];
+      int K = left.shape()[1];
+      assert(right.shape()[0] == K);
+      thensor<T,2> res({M,N});
+      T* dst = res.data();
+      for (int i = 0; i < M; i++)
+      {
+          T * dst_row = dst + i * N;
+          const T * lhs_row = lhs + i * K;
+          for (int j = 0; j < N; j++)
+              dst_row[j] = T();
+          for (int k = 0; k < K; k++)
+          {
+              const T * rhs_row = rhs  + k * N;
+              T lhs_val = lhs_row[k];
+              for (int j = 0; j < N; ++j)
+                  dst_row[j] += lhs_val * rhs_row[j];
+          }
+      }
+      return res;
+  }
+  
+  template<typename T>
   thensor<T, 1> operator*(const thensor<T, 2> &left, const thensor<T, 1> &right)
   {
       assert(left.shape()[1] == right.shape()[0]);
@@ -332,7 +360,7 @@ namespace linal
       const ThensorData<T,_dim-1>& data = _data[idx];
       thensor<T, _dim - 1> tmp;
       
-      tmp.wrap(data.data(),data.shape(),data.size());
+      tmp.wrap(data.data(),data.shape());
       return tmp;
   }
   

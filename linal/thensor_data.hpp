@@ -24,7 +24,7 @@ namespace linal
       ThensorData<T, dim - 1> operator[](int idx) const;
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
-      void construct(T *data,const std::vector<int> &shapes, int size);
+      void construct(T *data,const std::vector<int> &shapes);
       ThensorData() = default;
       explicit ThensorData(const std::vector<int> &shapes);
       ThensorData(const ThensorData<T, dim> &thensor_data);
@@ -48,7 +48,7 @@ namespace linal
       ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right);
       ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) noexcept;
       T &operator[](int idx) const;
-      void construct(T *data, const std::vector<int> &shapes, int size);
+      void construct(T *data, const std::vector<int> &shapes);
       ThensorData() = default;
       explicit ThensorData(const std::vector<int> &shapes);
       ThensorData(const ThensorData<T, 1> &thensor_data);
@@ -147,13 +147,16 @@ namespace linal
           tmp_shapes[i] = _shapes[i + 1];
       }
       ThensorData<T, dim - 1> tmp;
-      tmp.construct(_data + _size / _shapes[0] * idx, tmp_shapes, _size / _shapes[0]);
+      tmp.construct(_data + _size / _shapes[0] * idx, tmp_shapes);
       return tmp;
   }
   
   template<typename T, int dim>
-  void ThensorData<T, dim>::construct( T *data, const std::vector<int> &shapes, int size)
+  void ThensorData<T, dim>::construct( T *data, const std::vector<int> &shapes)
   {
+      int size = 1;
+      for (auto s: shapes)
+          size*=s;
       _data = data;
       _shapes = shapes;
       _size = size;
@@ -255,8 +258,11 @@ namespace linal
   }
   
   template<typename T>
-  void ThensorData<T, 1>::construct(T *data, const std::vector<int> &shapes, int size)
+  void ThensorData<T, 1>::construct(T *data, const std::vector<int> &shapes)
   {
+      int size = 1;
+      for (auto s: shapes)
+          size*=s;
       _data = data;
       _shapes = shapes;
       _size = size;
