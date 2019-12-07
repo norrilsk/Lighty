@@ -11,8 +11,17 @@
 #include"thensor_data.hpp"
 namespace linal
 {
-  template<typename T, int _dim>
-  class thensor;
+  class Container
+  {
+  public:
+      Container() = default;
+      virtual ~Container() = default;
+      virtual const std::vector<int> &shape() const noexcept  = 0;
+      virtual int size() const noexcept = 0;
+  };
+  
+  
+  
   template<typename T, int _dim>
   class thensor;
   template<typename T, int _dim>
@@ -44,7 +53,7 @@ namespace linal
   thensor<T, 2> transpose(const thensor<T, 2> &left);
   
   template<typename T, int _dim>
-  class thensor
+  class thensor : public Container
   {
   private:
       ThensorData<T, _dim> _data;
@@ -87,7 +96,7 @@ namespace linal
       //it means that data will not be allocated or free-ed inside
       void wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes); };
       
-      thensor<T, _dim> copy()
+      thensor<T, _dim> copy() const
       {
           thensor<T, _dim> tmp;
           tmp._data = _data.copy();
@@ -100,7 +109,7 @@ namespace linal
   };
   
   template<typename T>
-  class thensor<T,1>
+  class thensor<T,1> :  public Container
   {
   private:
       ThensorData<T, 1> _data;

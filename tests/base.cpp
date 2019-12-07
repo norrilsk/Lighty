@@ -6,14 +6,14 @@
 #include "../Layers.hpp"
 #include "../Losses.hpp"
 #include "base.hpp"
-
+//#include "../Nets.hpp"
 namespace test
 {
   void dense_layer(bool verbose)
   {
       std ::cout<< "DENSE LAYER TEST" <<std::endl;
       std ::cout<< "9 point interpolation 2 layer dense-net" <<std::endl;
-      std::vector<fvec> y(9, fvec({1})); //y = x*2 + 1
+      fmat y({9,1}); //y = x*2 + 1
       y[0][0] = 15;
       y[1][0] = 10;
       y[2][0] = 5;
@@ -23,8 +23,8 @@ namespace test
       y[6][0] = 5;
       y[7][0] = 10;
       y[8][0] = 15;
-      
-      std::vector<fvec> x(9, fvec({1}));
+    
+      fmat x({9,1});
       x[0][0] = -4;
       x[1][0] = -3;
       x[2][0] = -2;
@@ -41,32 +41,30 @@ namespace test
       Dense1D<float, float> f2(N, 1);
       MSE<float, float> mse;
       
-      fvec hidden(N), res(1), delta2(1), delta1(N), delta0(1);
+      //fvec res(1), delta2(1), delta1(N), delta0(1);
       for (int ep = 0; ep < 1000; ++ep)
       {
           float tmse = 0;
-          for (int i = 0; i < 9; ++i)
-          {
-              f1.forward(x[i], hidden);
-              //std::cout <<"hid: " << hidden << std::endl;
-              relu.forward(hidden, hidden);
-              //std::cout <<"rel: " << hidden << std::endl;
-              f2.forward(hidden, res);
-              //std::cout <<"res: " << res << std::endl;
-              tmse += mse(res, y[i]);
-              
-              delta2 = mse.grad(res, y[i]);
-              f2.backward(delta2, delta1);
-              relu.backward(delta1, delta1);
-              f1.backward(delta1, delta0);
-          }
+          auto&& hidden  = f1.forward(x);
+          //std::cout <<"hid: " << hidden << std::endl;
+          auto&& hidden2 = relu.forward(hidden);
+          //std::cout <<"rel: " << hidden << std::endl;
+          auto&& hidden3  = f2.forward(hidden2);
+          //std::cout <<"res: " << res << std::endl;
+          tmse += mse(dynamic_cast<const fmat &>(hidden3), y);
+          
+          auto&& delta2 = mse.grad(dynamic_cast<const fmat &>(hidden3), y);
+          auto&& delta1 = f2.backward(delta2);
+          auto&& delta0 = relu.backward(delta1);
+          f1.backward(delta0);
+          
           if (verbose)
               std::cout << tmse / 9 << "\n";
       }
       if (verbose)
         std::cout << std::endl << "______________" << "\n";
       
-      std::vector<fvec> xt(8, fvec(1));
+      fmat xt({8,1});
       xt[0][0] = -3.5f;
       xt[1][0] = -2.5f;
       xt[2][0] = -1.5f;
@@ -75,8 +73,8 @@ namespace test
       xt[5][0] = 1.5f;
       xt[6][0] = 2.5f;
       xt[7][0] = 3.5f;
-      
-      std::vector<fvec> yt(8, fvec(1));
+    
+      fmat yt({8,1});
       yt[0][0] = xt[0][0] * xt[0][0] + 1;
       yt[1][0] = xt[1][0] * xt[1][0] + 1;
       yt[2][0] = xt[2][0] * xt[2][0] + 1;
@@ -85,31 +83,39 @@ namespace test
       yt[5][0] = xt[5][0] * xt[5][0] + 1;
       yt[6][0] = xt[6][0] * xt[6][0] + 1;
       yt[7][0] = xt[7][0] * xt[7][0] + 1;
-      
-      float tmse = 0;
-      
-      for (int i = 0; i < 9; ++i)
+    
       {
-          f1.forward(x[i], hidden);
-          relu.forward(hidden, hidden);
-          f2.forward(hidden, res);
+          auto &&hidden = f1.forward(x);
+          //std::cout <<"hid: " << hidden << std::endl;
+          auto &&hidden2 = relu.forward(hidden);
+          //std::cout <<"rel: " << hidden << std::endl;
+          fmat res = dynamic_cast<const fmat &>(f2.forward(hidden2)).copy();
+          //std::cout <<"res: " << res << std::endl;
           if (verbose)
-              std::cout << res << "|" << y[i] << "; ";
-          tmse += mse(res, y[i]);
+          {
+              for (int i = 0; i < 9; ++i)
+              {
+                  std::cout << res[i][0] << "|" << y[i] << "; ";
+              }
+          }
+          std::cout << "\n Train mse:  " << mse(res, y) << std::endl;
       }
-      
-      std::cout << "\n Test mse:  " << tmse / 9 << std::endl;
-      tmse = 0;
-      for (int i = 0; i < 8; ++i)
       {
-          f1.forward(xt[i], hidden);
-          relu.forward(hidden, hidden);
-          f2.forward(hidden, res);
+          auto &&hidden = f1.forward(xt);
+          //std::cout <<"hid: " << hidden << std::endl;
+          auto &&hidden2 = relu.forward(hidden);
+          //std::cout <<"rel: " << hidden << std::endl;
+          fmat res = dynamic_cast<const fmat &>(f2.forward(hidden2)).copy();
+          //std::cout <<"res: " << res << std::endl;
           if (verbose)
-            std::cout << res << "|" << yt[i] << "; ";
-          tmse += mse(res, yt[i]);
+          {
+              for (int i = 0; i < 8; ++i)
+              {
+                  std::cout << res[i][0] << "|" << yt[i] << "; ";
+              }
+          }
+          std::cout << "\n Test mse:  " << mse(res, yt) << std::endl;
       }
-      std::cout << "\n Train mse: " << tmse / 8 << std::endl;
   }
   void matmul3x3(bool verbose)
   {
@@ -140,4 +146,17 @@ namespace test
       }
       
   }
+  /*void sequention_net(bool verbose)
+  {
+      Sequential net;
+      net.addDense1D<float,float>(2, 10);
+      net.addRelu1D<float,float>();
+      net.addDense1D<float,float>(10, 15);
+      net.addRelu1D<float,float>();
+      net.addDense1D<float,float>(15, 20);
+      net.addRelu1D<float,float>();
+      net.addDense1D<float,float>(20, 1);
+
+
+  }*/
 }

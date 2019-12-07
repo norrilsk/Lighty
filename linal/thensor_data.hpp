@@ -18,7 +18,7 @@ namespace linal
       inline T *data() noexcept { return _data; }
       inline const std::vector<int>& shape() const noexcept{ return _shapes;};
       
-      ThensorData<T, dim> copy();
+      ThensorData<T, dim> copy() const;
       ThensorData<T, dim> &operator=(const ThensorData<T, dim> &right);
       ThensorData<T, dim> &operator=(ThensorData<T, dim> &&right) noexcept;
       ThensorData<T, dim - 1> operator[](int idx) const;
@@ -44,7 +44,7 @@ namespace linal
       T *data() const { return _data; }
       inline const std::vector<int>& shape() const noexcept{ return _shapes;};
       
-      ThensorData<T, 1> copy();
+      ThensorData<T, 1> copy() const;
       ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right);
       ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) noexcept;
       T &operator[](int idx) const;
@@ -162,7 +162,7 @@ namespace linal
       _size = size;
   }
   template<typename T, int dim>
-  ThensorData<T, dim> ThensorData<T, dim>::copy()
+  ThensorData<T, dim> ThensorData<T, dim>::copy() const
   {
       ThensorData<T, dim> tmp(*this);
       return tmp;
@@ -268,7 +268,7 @@ namespace linal
       _size = size;
   }
   template<typename T>
-  ThensorData<T, 1> ThensorData<T, 1>::copy()
+  ThensorData<T, 1> ThensorData<T, 1>::copy() const
   {
       ThensorData<T, 1> tmp(*this);
       return tmp;
