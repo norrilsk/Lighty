@@ -9,6 +9,7 @@ template <typename T, typename R, typename S>
 class Loss
 {
 public:
+    typedef T returnType;
     Loss() = default;
     virtual ~Loss() = default;
     virtual T  operator()(linal::thensor<R,2>prediction,linal::thensor<S,2> label) = 0;

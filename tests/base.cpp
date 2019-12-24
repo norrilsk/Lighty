@@ -6,7 +6,8 @@
 #include "../Layers.hpp"
 #include "../Losses.hpp"
 #include "base.hpp"
-//#include "../Nets.hpp"
+#include "../Nets.hpp"
+#include<fstream>
 namespace test
 {
   void dense_layer(bool verbose)
@@ -35,14 +36,14 @@ namespace test
       x[7][0] = 3;
       x[8][0] = 4;
       
-      int N = 10;
+      int N = 1000;
       Dense1D<float, float> f1(1, N);
       Relu1D<float, float> relu;
       Dense1D<float, float> f2(N, 1);
       MSE<float, float> mse;
       
       //fvec res(1), delta2(1), delta1(N), delta0(1);
-      for (int ep = 0; ep < 1000; ++ep)
+      for (int ep = 0; ep < 10000; ++ep)
       {
           float tmse = 0;
           auto&& hidden  = f1.forward(x);
@@ -146,7 +147,7 @@ namespace test
       }
       
   }
-  /*void sequention_net(bool verbose)
+  void sequention_net(bool verbose)
   {
       Sequential net;
       net.addDense1D<float,float>(2, 10);
@@ -156,7 +157,50 @@ namespace test
       net.addDense1D<float,float>(15, 20);
       net.addRelu1D<float,float>();
       net.addDense1D<float,float>(20, 1);
-
-
-  }*/
+      float step = 0.04;
+      fmat data({2500,2});
+      fmat labels({2500,1});
+      int i = 0;
+      for ( float x = step/2 -1; x <1 ; x+=step)
+      {
+          for ( float y = step/2 -1; y <1 ; y+=step)
+          {
+              data[i][0] =x;
+              data[i][1] = y;
+              labels[i][0] = ((x*x + y*y) < 1 ) ? 1.f : 0.f;
+              i++;
+          }
+      }
+      
+      step =0.01;
+      fmat data_test({40000,2});
+      fmat labels_test({40000,1});
+      i = 0;
+      for ( float x = step/2 -1; x <1 ; x+=step)
+      {
+          for ( float y = step/2 -1; y <1 ; y+=step)
+          {
+              data_test[i][0] =x;
+              data_test[i][1] = y;
+              labels_test[i][0] = ((x*x + y*y) < 1 ) ? 1.f : 0.f;
+              i++;
+          }
+      }
+      
+      MSE<float,float> mse;
+      net.train<fmat,fmat, MSE<float,float>,true>(data,labels,mse,10,20);
+      fmat ans = net.predict_batch<fmat,fmat>(data_test);
+      std::cout<<mse(ans,labels_test);
+      std::ofstream out_train;
+      out_train.open("../train.txt");
+      out_train<< data;
+      out_train<< " \n";
+      out_train << labels - net.predict_batch<fmat,fmat>(data);;
+      
+      std::ofstream out;
+      out.open("../predict.txt");
+      out<< data_test;
+      out<< " \n";
+      out << ans;
+  }
 }
