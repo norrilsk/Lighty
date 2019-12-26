@@ -14,10 +14,15 @@ namespace linal
   class Container
   {
   public:
+	  Container& operator=(const Container & right) = default;
+	  Container& operator=(Container&& right) = default;
+
       Container() = default;
       virtual ~Container() = default;
       virtual const std::vector<int> &shape() const noexcept  = 0;
       virtual int size() const noexcept = 0;
+	  Container(const Container& th) = default;
+	  Container(Container&& th) = default;
   };
   
   
@@ -83,6 +88,8 @@ namespace linal
       thensor<T, _dim> &operator^=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator*=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator/=(const thensor<T, _dim> &right);
+	  thensor<T, _dim>& operator=(const thensor<T, _dim>& right) = default;
+	  thensor<T, _dim>& operator=(thensor<T, _dim>&& right)= default;
       T dot(const thensor<T, _dim> &right);
       
       thensor<T, _dim - 1> operator[](int idx) const;
@@ -104,6 +111,8 @@ namespace linal
       }
       
       thensor() = default;
+	  thensor(const thensor<T, _dim>& th) = default;
+	  thensor(thensor<T, _dim>&& th)  = default;
       explicit thensor(const std::vector<int> &shapes) : _data(shapes) {};
       ~thensor() = default;
   };
@@ -139,6 +148,8 @@ namespace linal
       thensor<T, 1> &operator^=(const thensor<T, 1> &right);
       thensor<T, 1> &operator*=(const thensor<T, 1> &right);
       thensor<T, 1> &operator/=(const thensor<T, 1> &right);
+	  thensor<T, 1>& operator=(const thensor<T, 1>& right) = default;
+	  thensor<T, 1>& operator=(thensor<T, 1> && right) = default;
       T dot(const thensor<T, 1> &right);
       
       T& operator[](int idx) const;
@@ -162,6 +173,8 @@ namespace linal
       thensor() = default;
       explicit thensor(const std::vector<int> &shapes) : _data(shapes) {};
       explicit thensor(int len) : _data({len}) {};
+	  thensor(const thensor<T, 1>& th) = default;
+	  thensor(thensor<T, 1> && th) = default;
       ~thensor() = default;
   };
   

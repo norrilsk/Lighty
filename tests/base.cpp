@@ -165,9 +165,11 @@ namespace test
       {
           for ( float y = step/2 -1; y <1 ; y+=step)
           {
-              data[i][0] =x;
+              data[i][0] = x;
               data[i][1] = y;
-              labels[i][0] = ((x*x + y*y) < 1 ) ? 1.f : 0.f;
+			  labels[i][0] = ((x*x + y*y) < 1.f ) ? 1.f : 0.f;
+			  //std::cout << "x = " << x << "  y = " << y << "  x ^2+ y^2 = " << (x * x + y * y) << " label = " << labels[i][0] << "\n";
+			 // std::cout << "x = " << data[i][0] << "  y = " << data[i][1] << "  x ^2+ y^2 = " << (x * x + y * y) << " label = " << labels[i][0] << "\n";
               i++;
           }
       }
@@ -180,9 +182,9 @@ namespace test
       {
           for ( float y = step/2 -1; y <1 ; y+=step)
           {
-              data_test[i][0] =x;
+              data_test[i][0] = x;
               data_test[i][1] = y;
-              labels_test[i][0] = ((x*x + y*y) < 1 ) ? 1.f : 0.f;
+              labels_test[i][0] = ((x*x + y*y) < 1.f ) ? 1.f : 0.f;
               i++;
           }
       }
@@ -193,14 +195,14 @@ namespace test
       std::cout<<mse(ans,labels_test);
       std::ofstream out_train;
       out_train.open("../train.txt");
-      out_train<< data;
+      //out_train<< data;
       out_train<< " \n";
-      out_train << labels - net.predict_batch<fmat,fmat>(data);;
+	  out_train << labels;// -net.predict_batch<fmat, fmat>(data);
       
       std::ofstream out;
       out.open("../predict.txt");
-      out<< data_test;
+     // out<< data_test;
       out<< " \n";
-      out << ans;
+      out << labels_test - ans;
   }
 }
