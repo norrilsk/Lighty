@@ -9,6 +9,7 @@
 #include<memory>
 #include<random>
 #include<algorithm>
+#include<functional>
 #include"Layers.hpp"
 #include <iostream>
 class Sequential
@@ -60,7 +61,7 @@ void Sequential::train(const T & data, T2& labels, S & loss_function, int batch_
     for (int i = 0 ; i < N; i++)
         indexes[i] = i;
     
-    for (int i = 0 ; i < epochs; i ++)
+    for (int i = 0 ; i < epochs; i++)
     {
         decltype(loss_function(label_batch,label_batch)) loss  = decltype(loss_function(label_batch,label_batch))();
         std::shuffle(indexes.begin(), indexes.end(), generator);

@@ -86,6 +86,7 @@ namespace linal
   ThensorData<T, dim>::ThensorData(const ThensorData<T, dim> &thensor_data)
   {
       std::vector<int> tmp_shapes = thensor_data._shapes;
+	  delete[] _allocated_data;
       int size = thensor_data._size;
       T *tmp_data = new T[size];
       std::copy(thensor_data._data, thensor_data._data + size, tmp_data);
@@ -99,6 +100,7 @@ namespace linal
   template<typename T, int dim>
   ThensorData<T, dim>::ThensorData(ThensorData<T, dim> &&thensor_data) noexcept
   {
+	  delete[] _allocated_data;
       _data = thensor_data._data;
       _allocated_data = thensor_data._allocated_data;
       _size = thensor_data._size;
@@ -112,6 +114,7 @@ namespace linal
       
       if (this == &right)
           return *this;
+	  delete[] _allocated_data;
       std::vector<int> tmp_shapes = right._shapes;
       int size = right._size;
       T *tmp_data = new T[size];
@@ -130,6 +133,7 @@ namespace linal
   {
       if (this == &right)
           return *this;
+	  delete[] _allocated_data;
       _data = right._data;
       _allocated_data = right._allocated_data;
       _size = right._size;
@@ -186,6 +190,7 @@ namespace linal
   {
       assert(1 == shapes.size());
       std::vector<int> tmp = shapes;
+	  delete[] _allocated_data;
       int size = 1;
       for (int i = 0; i < 1; i++)
       {
@@ -208,6 +213,7 @@ namespace linal
       int size = thensor_data._size;
       T *tmp_data = new T[size];
       std::copy(thensor_data._data, thensor_data._data + size, tmp_data);
+	  delete[] _allocated_data;
       //Kalb line
       //---------------------------------------------------------------
       _data = tmp_data;
@@ -218,6 +224,7 @@ namespace linal
   template<typename T>
   ThensorData<T, 1>::ThensorData(ThensorData<T, 1> &&thensor_data) noexcept
   {
+	  delete[] _allocated_data;
       _data = thensor_data._data;
       _allocated_data = thensor_data._allocated_data;
       _size = thensor_data._size;
@@ -231,6 +238,7 @@ namespace linal
       
       if (this == &right)
           return *this;
+	  delete[] _allocated_data;
       std::vector<int> tmp_shapes = right._shapes;
       int size = right._size;
       T *tmp_data = new T[size];
@@ -249,6 +257,7 @@ namespace linal
   {
       if (this == &right)
           return *this;
+	  delete[] _allocated_data;
       _data = right._data;
       _allocated_data = right._allocated_data;
       _size = right._size;
