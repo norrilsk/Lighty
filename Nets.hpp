@@ -63,7 +63,7 @@ void Sequential::train(const T & data, T2& labels, S & loss_function, int batch_
     
     for (int i = 0 ; i < epochs; i++)
     {
-        decltype(loss_function(label_batch,label_batch)) loss  = decltype(loss_function(label_batch,label_batch))();
+        auto loss  = decltype(loss_function(label_batch,label_batch))();
         std::shuffle(indexes.begin(), indexes.end(), generator);
         int j = 0;
         for (j = 0 ; j < N - batch_size; j+= batch_size)
