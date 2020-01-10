@@ -197,7 +197,7 @@ namespace test
       out_train.open("../train.txt");
       //out_train<< data;
       out_train<< " \n";
-	  out_train << labels;// -net.predict_batch<fmat, fmat>(data);
+	  out_train << labels -net.predict_batch<fmat, fmat>(data);
       
       std::ofstream out;
       out.open("../predict.txt");

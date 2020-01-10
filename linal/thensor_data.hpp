@@ -17,10 +17,12 @@ namespace linal
       inline const T *data() const noexcept { return _data; }
       inline T *data() noexcept { return _data; }
       inline const std::vector<int>& shape() const noexcept{ return _shapes;};
-      
+	  
+	  ThensorData<T, dim> &copy(const ThensorData<T, dim>& thensor_data);
       ThensorData<T, dim> copy() const;
-      ThensorData<T, dim> &operator=(const ThensorData<T, dim> &right);
-      ThensorData<T, dim> &operator=(ThensorData<T, dim> &&right) noexcept;
+      ThensorData<T, dim> &operator=(const ThensorData<T, dim> &right) &;
+	  ThensorData<T, dim> &operator=(const ThensorData<T, dim> &right) &&;
+	  ThensorData<T, dim> &operator=(ThensorData<T, dim>&& right) noexcept;
       ThensorData<T, dim - 1> operator[](int idx) const;
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
@@ -43,10 +45,12 @@ namespace linal
       int size() const { return _size; };
       T *data() const { return _data; }
       inline const std::vector<int>& shape() const noexcept{ return _shapes;};
-      
+
+	  ThensorData<T, 1> &copy(const ThensorData<T, 1>& thensor_data);
       ThensorData<T, 1> copy() const;
-      ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right);
-      ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) noexcept;
+      ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right) &&;
+      ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right) &;
+	  ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) noexcept;
       T &operator[](int idx) const;
       void construct(T *data, const std::vector<int> &shapes);
       ThensorData() = default;
@@ -109,7 +113,7 @@ namespace linal
   }
   
   template<typename T, int dim>
-  ThensorData<T, dim> &ThensorData<T, dim>::operator=(const ThensorData<T, dim> &right)
+  ThensorData<T, dim> &ThensorData<T, dim>::operator=(const ThensorData<T, dim> &right) &
   {
       
       if (this == &right)
@@ -127,9 +131,16 @@ namespace linal
       _shapes = std::move(tmp_shapes);
       return *this;
   }
-  
+
   template<typename T, int dim>
-  ThensorData<T, dim> &ThensorData<T, dim>::operator=(ThensorData<T, dim> &&right) noexcept
+  ThensorData<T, dim>& ThensorData<T, dim>::operator=(const ThensorData<T, dim>& right)&&
+  {
+	  
+	  return this->copy(right);
+  }
+
+  template<typename T, int dim>
+  ThensorData<T, dim> &ThensorData<T, dim>::operator=(ThensorData<T, dim> &&right) noexcept 
   {
       if (this == &right)
           return *this;
@@ -141,6 +152,7 @@ namespace linal
       right._allocated_data = nullptr;
       return *this;
   }
+
   template<typename T, int dim>
   ThensorData<T, dim - 1> ThensorData<T, dim>::operator[](int idx) const
   {
@@ -165,6 +177,16 @@ namespace linal
       _shapes = shapes;
       _size = size;
   }
+  template<typename T, int dim>
+  ThensorData<T, dim> & ThensorData<T, dim>::copy(const ThensorData<T, dim> &thensor_data)
+  {
+	  assert(thensor_data.size() == this->size());
+	  assert(thensor_data.shape() == this->shape());
+
+	  std::copy(thensor_data.data(), thensor_data.data() + thensor_data.size(), this->data());
+	  return *this;
+  }
+
   template<typename T, int dim>
   ThensorData<T, dim> ThensorData<T, dim>::copy() const
   {
@@ -231,9 +253,10 @@ namespace linal
       _shapes = std::move(thensor_data._shapes);
       thensor_data._allocated_data = nullptr;
   }
-  
+
+ 
   template<typename T>
-  ThensorData<T, 1> &ThensorData<T, 1>::operator=(const ThensorData<T, 1> &right)
+  ThensorData<T, 1> &ThensorData<T, 1>::operator=(const ThensorData<T, 1> &right) &
   {
       
       if (this == &right)
@@ -251,7 +274,13 @@ namespace linal
       _shapes = std::move(tmp_shapes);
       return *this;
   }
-  
+
+  template<typename T>
+  ThensorData<T, 1>& ThensorData<T, 1>::operator=(const ThensorData<T, 1>& right) &&
+  {
+	  return this->copy(right);
+  }
+
   template<typename T>
   ThensorData<T, 1> &ThensorData<T, 1>::operator=(ThensorData<T, 1> &&right) noexcept
   {
@@ -265,7 +294,7 @@ namespace linal
       right._allocated_data = nullptr;
       return *this;
   }
-  
+
   template<typename T>
   void ThensorData<T, 1>::construct(T *data, const std::vector<int> &shapes)
   {
@@ -275,6 +304,16 @@ namespace linal
       _data = data;
       _shapes = shapes;
       _size = size;
+  }
+
+  template<typename T>
+  ThensorData<T,1> &ThensorData<T, 1>::copy(const ThensorData<T,1>& thensor_data)
+  {
+	  assert(thensor_data.size() == this->size());
+	  assert(thensor_data.shape() == this->shape());
+
+	  std::copy(thensor_data.data(), thensor_data.data() + thensor_data.size(), this->data());
+	  return *this;
   }
   template<typename T>
   ThensorData<T, 1> ThensorData<T, 1>::copy() const
