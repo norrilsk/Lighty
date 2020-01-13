@@ -9,8 +9,12 @@
 #include <iostream>
 namespace test
 {
-  void dense_layer(bool verbose = false);
-  void matmul3x3(bool verbose = false);
-  void sequention_net(bool verbose = false);
+  bool dense_layer(bool verbose = false);
+  bool matmul3x3(bool verbose = false);
+  bool sequention_net(bool verbose = false);
+  bool thensor_test1(bool verbose = false);
+  bool thensor_test2(bool verbose = false);
+  bool thensor_test3(bool verbose = false);
+  bool thensor_test4(bool verbose = false);
 }
 #endif //LIGHTY_BASE_HPP

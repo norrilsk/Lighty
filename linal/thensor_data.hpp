@@ -22,7 +22,8 @@ namespace linal
       ThensorData<T, dim> copy() const;
       ThensorData<T, dim> &operator=(const ThensorData<T, dim> &right) &;
 	  ThensorData<T, dim> &operator=(const ThensorData<T, dim> &right) &&;
-	  ThensorData<T, dim> &operator=(ThensorData<T, dim>&& right) noexcept;
+	  ThensorData<T, dim> &operator=(ThensorData<T, dim>&& right) & noexcept;
+	  ThensorData<T, dim> &operator=(ThensorData<T, dim>&& right) &&;
       ThensorData<T, dim - 1> operator[](int idx) const;
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
@@ -50,7 +51,8 @@ namespace linal
       ThensorData<T, 1> copy() const;
       ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right) &&;
       ThensorData<T, 1> &operator=(const ThensorData<T, 1> &right) &;
-	  ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) noexcept;
+	  ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) & noexcept;
+	  ThensorData<T, 1> &operator=(ThensorData<T, 1> &&right) &&;
       T &operator[](int idx) const;
       void construct(T *data, const std::vector<int> &shapes);
       ThensorData() = default;
@@ -140,7 +142,7 @@ namespace linal
   }
 
   template<typename T, int dim>
-  ThensorData<T, dim> &ThensorData<T, dim>::operator=(ThensorData<T, dim> &&right) noexcept 
+  ThensorData<T, dim> &ThensorData<T, dim>::operator=(ThensorData<T, dim> &&right) & noexcept 
   {
       if (this == &right)
           return *this;
@@ -153,6 +155,11 @@ namespace linal
       return *this;
   }
 
+  template<typename T, int dim>
+  ThensorData<T, dim> &ThensorData<T, dim>::operator=(ThensorData<T, dim> &&right) && 
+  {
+	  return this->copy(right);
+  }
   template<typename T, int dim>
   ThensorData<T, dim - 1> ThensorData<T, dim>::operator[](int idx) const
   {
@@ -282,7 +289,7 @@ namespace linal
   }
 
   template<typename T>
-  ThensorData<T, 1> &ThensorData<T, 1>::operator=(ThensorData<T, 1> &&right) noexcept
+  ThensorData<T, 1> &ThensorData<T, 1>::operator=(ThensorData<T, 1> &&right) & noexcept
   {
       if (this == &right)
           return *this;
@@ -295,6 +302,11 @@ namespace linal
       return *this;
   }
 
+  template<typename T>
+  ThensorData<T, 1>& ThensorData<T, 1>::operator=(ThensorData<T, 1>&& right) &&
+  {
+	  return this->copy(right);
+  }
   template<typename T>
   void ThensorData<T, 1>::construct(T *data, const std::vector<int> &shapes)
   {

@@ -91,9 +91,9 @@ namespace linal
       thensor<T, _dim> &operator*=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator/=(const thensor<T, _dim> &right);
 	  thensor<T, _dim> &operator=(const thensor<T, _dim> &right) & { _data = right._data; return *this; };
-	  thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & { _data = right._data; return *this; };
+	  thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & { _data = std::move(right._data); return *this; };
 	  thensor<T, _dim> &operator=(const thensor<T, _dim> &right) && { std::move(_data) = right._data; return *this; };
-	  thensor<T, _dim> &operator=(thensor<T, _dim> &&right) && { std::move(_data) = right._data; return *this; };
+	  thensor<T, _dim> &operator=(thensor<T, _dim> &&right) && { std::move(_data) = std::move(right._data); return *this; };
       T dot(const thensor<T, _dim> &right);
       
       thensor<T, _dim - 1> operator[](int idx) const;
@@ -158,9 +158,9 @@ namespace linal
       thensor<T, 1> &operator*=(const thensor<T, 1> &right);
       thensor<T, 1> &operator/=(const thensor<T, 1> &right);
 	  thensor<T, 1> &operator=(const thensor<T, 1> &right) & { _data = right._data; return *this; };
-	  thensor<T, 1> &operator=(thensor<T, 1> &&right) & { _data = right._data; return *this; };
+	  thensor<T, 1> &operator=(thensor<T, 1> &&right) & { _data = std::move(right._data); return *this; };
 	  thensor<T, 1> &operator=(const thensor<T, 1> &right) && { std::move(_data) = right._data; return *this; };
-	  thensor<T, 1> &operator=(thensor<T, 1> &&right) && { std::move(_data) = right._data; return *this; };
+	  thensor<T, 1> &operator=(thensor<T, 1> &&right) && { std::move(_data) = std::move(right._data); return *this; };
       T dot(const thensor<T, 1> &right);
       
       T& operator[](int idx) const;
