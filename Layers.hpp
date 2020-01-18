@@ -135,9 +135,9 @@ template <typename T>
 class Relu1D<T, T> final : public Layers
 {
 private:
-    const fmat* _input_batch = nullptr; // need for backprop
-    fmat _output_batch;
-    fmat _delta_batch; // need for backprop
+    const linal::thensor<T,2>* _input_batch = nullptr; // need for backprop
+    linal::thensor<T,2> _output_batch;
+    linal::thensor<T,2> _delta_batch; // need for backprop
 public:
     const linal::Container& forward(const linal::Container &src) final;
     const linal::Container& backward(const linal::Container &delta) final;
@@ -148,8 +148,8 @@ public:
 template <typename T>
 const linal::Container& Relu1D<T, T> :: forward(const linal::Container &src)
 {
-    const fmat* input_batch_tmp = dynamic_cast<const fmat *>(&src);
-    fmat output_batch_tmp(input_batch_tmp->shape());
+    auto* input_batch_tmp = dynamic_cast<const linal::thensor<T,2> *>(&src);
+    linal::thensor<T,2> output_batch_tmp(input_batch_tmp->shape());
     const T* p_src = input_batch_tmp->data();
     T* p_dst = output_batch_tmp.data();
     for(int i = 0; i < input_batch_tmp->size(); i++)
@@ -158,9 +158,6 @@ const linal::Container& Relu1D<T, T> :: forward(const linal::Container &src)
     }
     // ---------------------Calb line-----------------------------------------
     _input_batch = input_batch_tmp;
-    // FIXME:
-    // there is copy constructor called
-    // it is not i expected
     _output_batch = std::move(output_batch_tmp);
     return dynamic_cast<const linal::Container&>(_output_batch);
 }
@@ -168,15 +165,79 @@ const linal::Container& Relu1D<T, T> :: forward(const linal::Container &src)
 template <typename T>
 const linal::Container& Relu1D<T, T>::backward(const linal::Container &delta)
 {
-    const fmat& deltaLower = dynamic_cast<const fmat&>(delta);
+    const auto& deltaLower = dynamic_cast<const linal::thensor<T,2>&>(delta);
     assert(deltaLower.size() == _input_batch->size());
-    fmat deltaUpper(deltaLower.shape());
+    linal::thensor<T,2> deltaUpper(deltaLower.shape());
     const T* p_src = deltaLower.data();
     const T* p_img = _input_batch->data();
     T* p_dst = deltaUpper.data();
     for(int i = 0; i < deltaLower.size(); i++)
     {
         p_dst[i] = (p_img[i] > T()) ? p_src[i] : T();
+        
+    }
+    // ---------------------Calb line-----------------------------------------
+    _input_batch = nullptr;
+    _delta_batch = deltaUpper;
+    return dynamic_cast<const linal::Container&>(_delta_batch);
+}
+
+template <typename T, typename S>
+class Sigmoid1D final : Layers
+{
+private:
+public:
+    const linal::Container& forward(const linal::Container &src) override {};
+    const linal::Container& backward(const linal::Container &delta ) override {};
+    Sigmoid1D() { throw std::logic_error{"Invalid template type. Use same input and output instead."};};
+    ~Sigmoid1D() final  = default;
+};
+
+template <typename T>
+class Sigmoid1D<T, T> final : public Layers
+{
+private:
+    const linal::thensor<T,2>* _input_batch = nullptr; // need for backprop
+    linal::thensor<T,2> _output_batch;
+    linal::thensor<T,2> _delta_batch; // need for backprop
+public:
+    const linal::Container& forward(const linal::Container &src) final;
+    const linal::Container& backward(const linal::Container &delta) final;
+    Sigmoid1D():_output_batch(), _delta_batch() {};
+    ~Sigmoid1D() final  = default;
+};
+
+template <typename T>
+const linal::Container& Sigmoid1D<T, T> :: forward(const linal::Container &src)
+{
+    const auto* input_batch_tmp = dynamic_cast<const linal::thensor<T,2> *>(&src);
+    linal::thensor<T,2> output_batch_tmp(input_batch_tmp->shape());
+    const T* p_src = input_batch_tmp->data();
+    T* p_dst = output_batch_tmp.data();
+    const T one = T() +1;
+    for(int i = 0; i < input_batch_tmp->size(); i++)
+    {
+        p_dst[i] = one/(std::exp(-p_src[i]) + one);
+    }
+    // ---------------------Calb line-----------------------------------------
+    _input_batch = input_batch_tmp;
+    _output_batch = std::move(output_batch_tmp);
+    return dynamic_cast<const linal::Container&>(_output_batch);
+}
+
+template <typename T>
+const linal::Container& Sigmoid1D<T, T>::backward(const linal::Container &delta)
+{
+    const auto& deltaLower = dynamic_cast<const linal::thensor<T,2>&>(delta);
+    assert(deltaLower.size() == _input_batch->size());
+    linal::thensor<T,2> deltaUpper(deltaLower.shape());
+    const T* p_src = deltaLower.data();
+    const T* p_img = _output_batch.data();
+    T* p_dst = deltaUpper.data();
+    T one = T() + 1;
+    for(int i = 0; i < deltaLower.size(); i++)
+    {
+        p_dst[i] = p_src[i] * (p_img[i] * (one - p_img[i]));
         
     }
     // ---------------------Calb line-----------------------------------------

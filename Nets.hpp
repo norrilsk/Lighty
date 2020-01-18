@@ -21,10 +21,12 @@ public:
     template <typename S, typename T, typename...  Args>
     void addRelu1D(Args... args);
     template <typename S, typename T, typename...  Args>
+    void addSigmoid1D(Args... args);
+    template <typename S, typename T, typename...  Args>
     void addDense1D(Args... args);
-    template<typename T,  typename T2, typename S, bool verbose = false>
-    void train(const T & data, T2& labels, S & loss_function, int batch_size, int epochs = 100,
-        std::function<void(T &)> aug = [](T& _data){});
+    template<typename T,  typename T2, typename S>
+    void train(const T & data, T2& labels, int batch_size, int epochs = 100, bool verbose = false,
+        std::function<void(T &)> aug = [](T& _data){}, const S& loss_function  = S());
     template<typename T, typename Tret>
     Tret predict(const T & data);
     template<typename T, typename Tret>
@@ -35,17 +37,24 @@ public:
 template<typename S, typename T, typename... Args>
 void Sequential::addRelu1D(Args... args)
 {
-    layers.emplace_back( new Relu1D<float,float>(args...));
+    layers.emplace_back( new Relu1D<S,T>(args...));
 }
+
+template<typename S, typename T, typename... Args>
+void Sequential::addSigmoid1D(Args... args)
+{
+    layers.emplace_back( new Sigmoid1D<S,T>(args...));
+}
+
 template<typename S, typename T, typename... Args>
 void Sequential::addDense1D(Args... args)
 {
-    layers.emplace_back( new Dense1D<float,float>(args...));
+    layers.emplace_back( new Dense1D<S,T>(args...));
 }
 
-template<typename T,  typename T2, typename S, bool verbose>
-void Sequential::train(const T & data, T2& labels, S & loss_function, int batch_size,
-    int epochs , std::function<void(T &)> aug)
+template<typename T,  typename T2, typename S>
+void Sequential::train(const T & data, T2& labels, int batch_size,
+    int epochs, bool verbose,std::function<void(T &)> aug, const S& loss_function)
 {
     std::vector<int> batch_shape = data.shape();
     std::vector<int> label_shape = labels.shape();
@@ -66,7 +75,7 @@ void Sequential::train(const T & data, T2& labels, S & loss_function, int batch_
         auto loss  = decltype(loss_function(label_batch,label_batch))();
         std::shuffle(indexes.begin(), indexes.end(), generator);
         int j = 0;
-        for (j = 0 ; j < N - batch_size; j+= batch_size)
+        for (j = 0 ; j <= N - batch_size; j+= batch_size)
         {
             for (int k = 0; k < batch_size; k++)
             {
@@ -94,7 +103,7 @@ void Sequential::train(const T & data, T2& labels, S & loss_function, int batch_
             }
         }
         if (verbose)
-            std::cout<<"epoch # " <<  i << "\t loss = " << loss <<std::endl;
+            std::cout<<"epoch # " <<  i << "\t loss = " << loss/(N/batch_size) <<std::endl;
     }
 }
 template<typename T, typename Tret>

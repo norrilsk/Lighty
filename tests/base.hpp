@@ -10,6 +10,8 @@
 namespace test
 {
   bool dense_layer(bool verbose = false);
+  bool dense_net(bool verbose = false);
+  bool dense_net_sin(bool verbose = false);
   bool matmul3x3(bool verbose = false);
   bool sequention_net(bool verbose = false);
   bool thensor_test1(bool verbose = false);

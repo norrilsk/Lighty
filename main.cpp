@@ -12,6 +12,8 @@ int main()
 	test::thensor_test2();
 	test::thensor_test3();
 	test::thensor_test4();
-	test::sequention_net();
+	//test::sequention_net(true);
+	//test::dense_net(true);
+	test::dense_net_sin(true);
     return 0;
 }

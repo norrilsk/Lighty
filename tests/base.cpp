@@ -10,6 +10,88 @@
 #include<fstream>
 namespace test
 {
+    bool dense_net(bool verbose)
+    {
+        std::cout<< "DENSE NET TEST" <<std::endl;
+        std::cout<< "COPY OF DENSE LAYER TEST WITH NET API"<<std::endl;
+        fmat y({ 9,1 }); //y = x*2 + 1
+        y[0][0] = 15;
+        y[1][0] = 10;
+        y[2][0] = 5;
+        y[3][0] = 2;
+        y[4][0] = 1;
+        y[5][0] = 2;
+        y[6][0] = 5;
+        y[7][0] = 10;
+        y[8][0] = 15;
+    
+        fmat x({ 9,1 });
+        x[0][0] = -4;
+        x[1][0] = -3;
+        x[2][0] = -2;
+        x[3][0] = -1;
+        x[4][0] = 0;
+        x[5][0] = 1;
+        x[6][0] = 2;
+        x[7][0] = 3;
+        x[8][0] = 4;
+        
+        int N = 1000;
+        Sequential net;
+        net.addDense1D<float,float>(1,N);
+        net.addRelu1D<float,float>();
+        net.addDense1D<float,float>(N,1);
+        MSE<float, float> mse;
+        
+        net.train<fmat, fmat, MSE<float, float> >(x, y, 1, 10000,verbose);
+        
+    
+        fmat xt({ 8,1 });
+        xt[0][0] = -3.5f;
+        xt[1][0] = -2.5f;
+        xt[2][0] = -1.5f;
+        xt[3][0] = -0.5f;
+        xt[4][0] = 0.5f;
+        xt[5][0] = 1.5f;
+        xt[6][0] = 2.5f;
+        xt[7][0] = 3.5f;
+    
+        fmat yt({ 8,1 });
+        yt[0][0] = xt[0][0] * xt[0][0] + 1;
+        yt[1][0] = xt[1][0] * xt[1][0] + 1;
+        yt[2][0] = xt[2][0] * xt[2][0] + 1;
+        yt[3][0] = xt[3][0] * xt[3][0] + 1;
+        yt[4][0] = xt[4][0] * xt[4][0] + 1;
+        yt[5][0] = xt[5][0] * xt[5][0] + 1;
+        yt[6][0] = xt[6][0] * xt[6][0] + 1;
+        yt[7][0] = xt[7][0] * xt[7][0] + 1;
+        
+		
+    
+        {
+			fmat res = net.predict_batch<fmat, fmat>(x);
+            if (verbose)
+            {
+                for (int i = 0; i < 9; ++i)
+                {
+                    std::cout << res[i][0] << "|" << y[i] << "; ";
+                }
+            }
+            std::cout << "\n Train mse:  " << mse(res, y) << std::endl;
+        }
+        {
+			fmat res = net.predict_batch<fmat, fmat>(xt);
+            if (verbose)
+            {
+                for (int i = 0; i < 8; ++i)
+                {
+                    std::cout << res[i][0] << "|" << yt[i] << "; ";
+                }
+            }
+            std::cout << "\n Test mse:  " << mse(res, yt) << std::endl;
+        }
+        return true;
+    }
 	bool dense_layer(bool verbose)
 	{
 		std::cout << "DENSE LAYER TEST" << std::endl;
@@ -150,61 +232,114 @@ namespace test
 		}
 
 	}
+	
+    bool dense_net_sin(bool verbose)
+	{
+    	fmat x({100,1}), y({100,1}),
+    		 xt({100,1}), yt({100,1});
+		static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
+		std::uniform_real_distribution<float> distribution{-3.141592f,3.141592f};
+    	for (int i = 0 ; i < 100 ; i++)
+		{
+    		x[i][0] = distribution(generator);
+    		y[i][0] = std::sin(x[i][0]);
+			xt[i][0] = distribution(generator);
+			yt[i][0] = std::sin(xt[i][0]);
+		}
+		Sequential net;
+    	int N1 = 50;
+    	int N2 = 500;
+    	int N3 = 100;
+    	net.addDense1D<float,float>(1,N1);
+    	net.addRelu1D<float,float>();
+    	net.addDense1D<float,float>(N1,N2);
+    	net.addRelu1D<float,float>();
+		net.addDense1D<float,float>(N2,N3);
+		net.addSigmoid1D<float,float>();
+    	net.addDense1D<float,float>(N3,1);
+    	
+    	net.train<fmat,fmat,MSE<float,float> >(x,y,10,2000,verbose);
+		MSE<float,float> mse;
+		{
+			fmat res = net.predict_batch<fmat, fmat>(x);
+			if (verbose)
+			{
+				for (int i = 0; i < 10; ++i)
+				{
+					std::cout << res[i][0] << "|" << y[i] << "; ";
+				}
+			}
+			std::cout << "\n Train mse:  " << mse(res, y) << std::endl;
+		}
+		{
+			fmat res = net.predict_batch<fmat, fmat>(xt);
+			if (verbose)
+			{
+				for (int i = 0; i < 10; ++i)
+				{
+					std::cout << res[i][0] << "|" << yt[i] << "; ";
+				}
+			}
+			std::cout << "\n Test mse:  " << mse(res, yt) << std::endl;
+		}
+		return true;
+	}
+	
 	bool sequention_net(bool verbose)
 	{
+		int Npoints = 1000;
+		fmat x({Npoints,2}), y({Npoints,1}),
+			xt({Npoints,2}), yt({Npoints,1});
+		static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
+		std::uniform_real_distribution<float> distribution{-1.f,1.f};
+		for (int i = 0 ; i < Npoints ; i++)
+		{
+			float x1 = distribution(generator),
+			      x2 = distribution(generator);
+			x[i][0] = x1;
+			x[i][1] = x2;
+			y[i][0] = ((x1*x1 + x2*x2) < 1.f) ? 1.f : 0.f;
+			
+			x1 = distribution(generator),
+			x2 = distribution(generator);
+			xt[i][0] = x1;
+			xt[i][1] = x2;
+			yt[i][0] = ((x1*x1 + x2*x2) < 1.f) ? 1.f : 0.f;
+		}
 		Sequential net;
-		net.addDense1D<float, float>(2, 10);
-		net.addRelu1D<float, float>();
-		net.addDense1D<float, float>(10, 15);
-		net.addRelu1D<float, float>();
-		net.addDense1D<float, float>(15, 20);
-		net.addRelu1D<float, float>();
-		net.addDense1D<float, float>(20, 1);
-		float step = 0.04;
-		fmat data({ 2500,2 });
-		fmat labels({ 2500,1 });
-		int i = 0;
-		for (float x = step / 2 - 1; x < 1; x += step)
+		int N1 = 500;
+		int N2 = 500;
+		int N3 = 100;
+		net.addDense1D<float,float>(2,N1);
+		net.addRelu1D<float,float>();
+		net.addDense1D<float,float>(N1,N2);
+		net.addRelu1D<float,float>();
+		net.addDense1D<float,float>(N2,1);
+		
+		net.train<fmat,fmat,MSE<float,float> >(x,y,10,100,verbose);
+		MSE<float,float> mse;
+  
+  
+		
+		fmat ans = net.predict_batch<fmat, fmat>(x);
+		if (verbose)
 		{
-			for (float y = step / 2 - 1; y < 1; y += step)
+			for (int i = 0 ; i < 10; i++)
 			{
-				data[i][0] = x;
-				data[i][1] = y;
-				labels[i][0] = ((x * x + y * y) < 1.f) ? 1.f : 0.f;
-				i++;
+					std::cout<<"("<< x[i][0]<<';'<<x[i][1]<<") " << ans[i] << " | " << y[i][0] <<";  ";
 			}
-		}
-
-		step = 0.01;
-		fmat data_test({ 40000,2 });
-		fmat labels_test({ 40000,1 });
-		i = 0;
-		for (float x = step / 2 - 1; x < 1; x += step)
-		{
-			for (float y = step / 2 - 1; y < 1; y += step)
+			std::cout<<'\n';
+			std::cout << "MSE train " << mse(ans, y) << "\n";
+			
+			ans = net.predict_batch<fmat, fmat>(xt);
+			for (int i = 0 ; i < 10; i++)
 			{
-				data_test[i][0] = x;
-				data_test[i][1] = y;
-				labels_test[i][0] = ((x * x + y * y) < 1.f) ? 1.f : 0.f;
-				i++;
+				std::cout<<"("<< xt[i][0]<<';'<<xt[i][1]<<") " << ans[i] << " | " << yt[i][0] <<";  ";
 			}
+			std::cout<<'\n';
+			std::cout << "MSE test " << mse(ans, yt) << std::endl;
+			
 		}
-
-		MSE<float, float> mse;
-		net.train<fmat, fmat, MSE<float, float>, true>(data, labels, mse, 10, 20);
-		fmat ans = net.predict_batch<fmat, fmat>(data_test);
-		std::cout << mse(ans, labels_test);
-		std::ofstream out_train;
-		out_train.open("../train.txt");
-		//out_train<< data;
-		out_train << " \n";
-		out_train << labels - net.predict_batch<fmat, fmat>(data);
-
-		std::ofstream out;
-		out.open("../predict.txt");
-		// out<< data_test;
-		out << " \n";
-		out << labels_test - ans;
 		return true;
 	}
 
