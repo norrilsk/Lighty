@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include "linal/thensor.hpp"
+#include "Optimizers.hpp"
 #include <chrono>
 typedef linal::thensor<float,1> fvec;
 typedef linal::thensor<float,2> fmat;
@@ -21,7 +22,6 @@ class Layers
 {
 protected:
     bool training = true;
-
 public:
     virtual const linal::Container& forward(const linal::Container &src ) = 0;
     //http://neuralnetworksanddeeplearning.com/chap2.html
@@ -29,6 +29,7 @@ public:
     Layers() = default;
     virtual ~Layers() = default;
     void set_mode(TrainigMode mode){training = mode;}
+    virtual void set_optimizer(optim::optimizer_t type, float lr) {};
 };
 template <typename T, typename S>
 class Dense1D final : public Layers
@@ -39,7 +40,6 @@ public:
     Dense1D(int inputSize, int outputSize) { throw std::logic_error{"Invalid template type. Use float instead."};};
     ~Dense1D() final  = default;
 };
-
 template <>
 class Dense1D<float, float> final : public Layers
 {
@@ -50,23 +50,37 @@ class Dense1D<float, float> final : public Layers
     int _outputSize = 0;
     fmat _weights;
     fvec _bias;
+    std::unique_ptr<optim::Optimizer> _weights_optimizer = nullptr;
+    std::unique_ptr<optim::Optimizer> _bias_optimizer = nullptr;
 public:
     const linal::Container& forward(const linal::Container &src ) final;
     const linal::Container& backward(const linal::Container &delta ) final;
     fmat weights(){return _weights;}
     fvec bias(){return _bias;}
-    
-    Dense1D(int inputSize, int outputSize);
+    //sometimes we need to change optimizers on fly
+    //set optimizers to nullptr to freeze layer
+    void set_optimizers(std::unique_ptr<optim::Optimizer> weights_optimizer,
+        std::unique_ptr<optim::Optimizer>  bias_optimizer)
+        {
+            _weights_optimizer = std::move(weights_optimizer);
+            _bias_optimizer = std::move(bias_optimizer);
+        };
+    void set_optimizer(optim::optimizer_t type, float lr) final;
+    Dense1D(int inputSize, int outputSize,
+        std::unique_ptr<optim::Optimizer> weights_optimizer = std::make_unique<optim::SGD<fmat>>(),
+        std::unique_ptr<optim::Optimizer>  bias_optimizer = std::make_unique<optim::SGD<fvec>>());
     ~Dense1D() final  = default;
 };
 
 
-Dense1D<float, float> ::Dense1D(int inputSize, int outputSize) :
+Dense1D<float, float> ::Dense1D(int inputSize, int outputSize,
+    std::unique_ptr<optim::Optimizer> weights_optimizer,
+    std::unique_ptr<optim::Optimizer>  bias_optimizer):
 _inputSize(inputSize), _outputSize(outputSize), _weights({inputSize,outputSize}),
-_bias(outputSize),_output_batch(), _delta_batch()
+_bias(outputSize),_output_batch(), _delta_batch() , _weights_optimizer(std::move(weights_optimizer)),
+_bias_optimizer(std::move(bias_optimizer))
 {
-    // TODO:
-    //dense_layer_number_that_garantee_non_repeateble_random_seed_for_random_engine
+    // TODO: think about correct initialization (may be some articles)
 
     static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
     std::normal_distribution<float> distribution{0.0,0.01};
@@ -83,6 +97,11 @@ _bias(outputSize),_output_batch(), _delta_batch()
             row[j] = distribution(generator);
         }
     }
+}
+void Dense1D<float, float>::set_optimizer(optim::optimizer_t type, float lr)
+{
+    _weights_optimizer = std::move(optim::get_optimizer<fmat>(type, lr));
+    _bias_optimizer = std::move(optim::get_optimizer<fvec>(type, lr));
 }
 
 const linal::Container& Dense1D<float, float>::forward(const linal::Container &src )
@@ -107,13 +126,31 @@ const linal::Container& Dense1D<float, float>::backward(const linal::Container &
     fmat deltaUpper = linal::matmul(deltaLower, linal::transpose(_weights));
     // ---------------------Calb line-----------------------------------------
     
-    //TODO: run optimizer here
     double r_batch = 1. /batch_size;
-    for (int i = 0; i < batch_size; i++)
+   
+    if (_bias_optimizer)
     {
-        _bias += 1e-2 * r_batch * deltaLower[i];
-        _weights += 1e-2 * r_batch * linal::matmul(deltaLower[i], (*_input_batch)[i]);
+        fvec grad_bias(_bias.size());
+        linal::zero_set(grad_bias);
+        // computing average gradient on batch
+        for (int i = 0; i < batch_size; i++)
+        {
+            grad_bias += deltaLower[i];
+        }
+        grad_bias  = -r_batch *grad_bias;
+        
+        (*_bias_optimizer)(_bias, grad_bias);
     }
+    if ( _weights_optimizer)
+    {
+        fmat grad_weights(_weights.shape());
+        linal::zero_set(grad_weights);
+        // computing average gradient on batch
+        grad_weights = -r_batch *linal::matmul(linal::transpose(deltaLower) , *_input_batch);
+        
+        (*_weights_optimizer)(_weights, grad_weights);
+    }
+   
     _input_batch = nullptr;
     _delta_batch = deltaUpper;
     return dynamic_cast<const linal::Container&>(_delta_batch);

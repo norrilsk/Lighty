@@ -12,6 +12,7 @@
 #include<functional>
 #include"Layers.hpp"
 #include <iostream>
+#include "Optimizers.hpp"
 class Sequential
 {
 private:
@@ -31,6 +32,8 @@ public:
     Tret predict(const T & data);
     template<typename T, typename Tret>
     Tret predict_batch(const T & data);
+    //set common optimizer for whole net
+    void set_optimizers(optim::optimizer_t type, float lr);
     Sequential() = default;
     ~Sequential() = default;
 };
@@ -135,5 +138,11 @@ Tret Sequential::predict_batch(const T &data)
     const T& answer = dynamic_cast<const T&>(*x);
     return answer;
 }
-
+void Sequential::set_optimizers(optim::optimizer_t type, float lr)
+{
+    for (auto& layer : layers )
+    {
+        layer->set_optimizer(type,lr);
+    }
+}
 #endif //LIGHTY_NETS_HPP
