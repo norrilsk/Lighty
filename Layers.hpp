@@ -124,13 +124,15 @@ const linal::Container& Dense1D<float, float>::backward(const linal::Container &
     int batch_size = deltaLower.shape()[0];
     assert(batch_size == _input_batch->shape()[0]);
     fmat deltaUpper = linal::matmul(deltaLower, linal::transpose(_weights));
-    // ---------------------Calb line-----------------------------------------
+
     
     double r_batch = 1. /batch_size;
-   
+    
+    fvec grad_bias;
+    fmat grad_weights;
     if (_bias_optimizer)
     {
-        fvec grad_bias(_bias.size());
+        grad_bias = fvec(_bias.size());
         linal::zero_set(grad_bias);
         // computing average gradient on batch
         for (int i = 0; i < batch_size; i++)
@@ -139,18 +141,21 @@ const linal::Container& Dense1D<float, float>::backward(const linal::Container &
         }
         grad_bias  = -r_batch *grad_bias;
         
-        (*_bias_optimizer)(_bias, grad_bias);
     }
     if ( _weights_optimizer)
     {
-        fmat grad_weights(_weights.shape());
+        grad_weights = fmat(_weights.shape());
         linal::zero_set(grad_weights);
         // computing average gradient on batch
         grad_weights = -r_batch *linal::matmul(linal::transpose(deltaLower) , *_input_batch);
-        
-        (*_weights_optimizer)(_weights, grad_weights);
     }
-   
+    
+    // ---------------------Calb line-----------------------------------------
+    //there has to be but...
+    if (_bias_optimizer)
+        (*_bias_optimizer)(_bias, grad_bias);
+    if (_weights_optimizer)
+        (*_weights_optimizer)(_weights, grad_weights);
     _input_batch = nullptr;
     _delta_batch = deltaUpper;
     return dynamic_cast<const linal::Container&>(_delta_batch);

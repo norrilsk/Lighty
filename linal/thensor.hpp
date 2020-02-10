@@ -63,6 +63,8 @@ namespace linal
       ThensorData<T, _dim> _data;
   
   public:
+      typedef T d_type;
+      
       friend thensor<T, _dim> operator+<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
       friend thensor<T, _dim> operator-<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
       friend thensor<T, _dim> operator&<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
@@ -130,6 +132,8 @@ namespace linal
       ThensorData<T, 1> _data;
   
   public:
+      typedef T d_type;
+      
       friend thensor<T, 1> operator+<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
       friend thensor<T, 1> operator-<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
       friend thensor<T, 1> operator&<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
