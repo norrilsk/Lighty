@@ -258,8 +258,8 @@ namespace test
 		net.addSigmoid1D<float,float>();
     	net.addDense1D<float,float>(N3,1);
     	
-    	net.set_optimizers(optim::OPTIMIZER_SGD,2e-2);
-    	net.train<fmat,fmat,MSE<float,float> >(x,y,10,5000,verbose);
+    	net.set_optimizers(optim::OPTIMIZER_ADAM,2e-2);
+    	net.train<fmat,fmat,MSE<float,float> >(x,y,10,3000,verbose);
 		MSE<float,float> mse;
 		{
 			fmat res = net.predict_batch<fmat, fmat>(x);
