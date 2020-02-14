@@ -90,7 +90,7 @@ namespace linal
       thensor<T, _dim> &operator*=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator/=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator=(const thensor<T, _dim> &right) & { _data = right._data; return *this; };
-      thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & { _data = std::move(right._data); return *this; };
+      thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & noexcept { _data = std::move(right._data); return *this; };
       thensor<T, _dim> &operator=(const thensor<T, _dim> &right) && { std::move(_data) = right._data; return *this; };
       thensor<T, _dim> &operator=(thensor<T, _dim> &&right) && { std::move(_data) = std::move(right._data); return *this; };
       T dot(const thensor<T, _dim> &right) const;
@@ -268,7 +268,8 @@ namespace linal
       thensor<S,_dim> tmp(right);
       S *lhs = tmp.data();
       const S *rhs = right.data();
-      for (int i = 0; i < right.size(); i++)
+	  int sz = right.size();
+      for (int i = 0; i < sz; i++)
       {
           lhs[i] = left*rhs[i];
       }

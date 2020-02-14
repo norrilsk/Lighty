@@ -102,20 +102,28 @@ namespace optim
       return x;
   }
 
-  //gradient depends on alpha
-  //square gradient depends on beta 
+/*
+* gradient depends on alpha
+* square gradient depends on beta 
+* _acum_(alpha/beta) contain (_alpha/_beta)^(iteration)	
+*/
   template<typename T>
   class Adam : public Optimizer
   {
   private:
 	  float _alpha = 0.9;
 	  float _beta = 0.9;
+	  float _acum_alpha, _acum_beta;
 	  float _e = 1e-6;
 	  int _iteration = 1;
 	  T _mean_grad;
 	  typename T::d_type _mean_square_grad = typename T::d_type();
   public:
-	  explicit Adam(float lr = 1e-3, float alpha = 0.9, float beta = 0.9, float e = 1e-6) : Optimizer(lr), _alpha(alpha) , _beta(beta), _e(e) {};
+	  explicit Adam(float lr = 1e-3, float alpha = 0.9, float beta = 0.9, float e = 1e-6) : Optimizer(lr), _alpha(alpha) , _beta(beta), _e(e)
+	  {
+		  _acum_alpha = _alpha; 
+		  _acum_beta = _beta;
+	  };
 	  linal::Container& operator()(linal::Container& src, const linal::Container& grad_src) final;
   };
 
@@ -201,17 +209,19 @@ namespace optim
 	  typename T::d_type next_mean_square_grad = _beta * _mean_square_grad + (1 - _beta) * grad_x.dot(grad_x);
 	  if (_iteration < 10)
 	  {
-		  next_mean_grad = 1.f / (1 - std::pow(_alpha , _iteration)) * next_mean_grad;
+		  next_mean_grad = 1.f / (1 - _acum_alpha) * next_mean_grad;
 	  }
 	  if (_iteration < 200)
 	  {
-		  next_mean_square_grad = next_mean_square_grad * 1.f / (1 - std::pow(_beta, _iteration));
+		  next_mean_square_grad = next_mean_square_grad * 1.f / (1 - _acum_beta);
 	  }
-	  x = x - lr * 1.f / std::sqrt(next_mean_square_grad +_e) * next_mean_grad;
+	  x -= lr * 1.f / std::sqrt(next_mean_square_grad +_e) * next_mean_grad;
 	  // ---------------------Calb line-----------------------------------------
 	  _iteration++;
 	  _mean_grad = std::move(next_mean_grad);
 	  _mean_square_grad = std::move(next_mean_square_grad);
+	  _acum_alpha *= _alpha;
+	  _acum_beta *= _beta;
 	  return src;
   }
 
