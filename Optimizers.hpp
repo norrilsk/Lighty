@@ -51,6 +51,8 @@ namespace optim
   private:
       float _alpha = 0.9;
       T _speed;
+      T _buf1;
+      T _buf2;
   public:
       explicit Momentum(float lr = 1e-3 ,float alpha = 0.9) : Optimizer(lr), _alpha(alpha) {};
       linal::Container &operator()(linal::Container &src, const linal::Container &grad_src) final;
@@ -134,17 +136,30 @@ namespace optim
       T &x = dynamic_cast<T &>(src);
       const T &grad_x = dynamic_cast<const T &>(grad_src);
       T cur_speed;
+      T next_speed;
+      T tmp;
       if (x.size() != _speed.size())
       {
-          cur_speed = T(x.shape());
-          linal::zero_set<typename T:: d_type>(cur_speed);
+          cur_speed = linal::zero_thensor<typename T::d_type, T::d_dim>(x.shape());
+          tmp = T(x.shape());
+          next_speed = T(x.shape());
       }
       else
+      {
           cur_speed = _speed;
-      T next_speed = _alpha * cur_speed  +  lr * grad_x;
-      x = x - next_speed;
+          next_speed = _buf1; // because we do not want to allocate new mem
+          tmp = _buf2;
+      }
+      next_speed << cur_speed;
+      next_speed *=_alpha;
+      tmp << grad_x;
+      tmp *=lr;
+      next_speed +=  lr * grad_x;
+      x -= next_speed;
       // ---------------------Calb line-----------------------------------------
       _speed = std::move(next_speed);
+      _buf1 = std::move(cur_speed);
+      _buf2 = std::move(tmp);
 	  return src;
   }
   

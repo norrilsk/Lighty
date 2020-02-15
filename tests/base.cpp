@@ -317,7 +317,7 @@ namespace test
 		net.addRelu1D<float,float>();
 		net.addDense1D<float,float>(N2,1);
 		//net.addSigmoid1D<float,float>();
-		net.set_optimizers(optim::OPTIMIZER_MOMENTUM,1e-2);
+		net.set_optimizers(optim::OPTIMIZER_RMSPROP,1e-2);
 		net.train<fmat,fmat,MSE<float,float> >(x,y,2,200,verbose);
 		MSE<float,float> mse;
   

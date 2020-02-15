@@ -147,7 +147,7 @@ const linal::Container& Dense1D<float, float>::backward(const linal::Container &
         grad_weights = fmat(_weights.shape());
         linal::zero_set(grad_weights);
         // computing average gradient on batch
-        grad_weights = -r_batch *linal::matmul(linal::transpose(deltaLower) , *_input_batch);
+        grad_weights -= linal::matmul(linal::transpose(*_input_batch), deltaLower);
     }
     
     // ---------------------Calb line-----------------------------------------

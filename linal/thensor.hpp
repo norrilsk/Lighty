@@ -44,6 +44,9 @@ namespace linal
   bool operator!=(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
   template<typename T, int _dim>
   std::ostream &operator<<(std::ostream &os, const thensor<T, _dim> &th);
+  template<typename T, int _dim>
+  thensor<T, _dim> & operator<<(thensor<T, _dim> &left, const thensor<T, _dim> &right);
+  
   template<typename T>
   thensor<T, 1> operator*(const thensor<T, 2> &left, const thensor<T, 1> &right);
   template<typename T>
@@ -54,7 +57,8 @@ namespace linal
   thensor<T, 2> transpose(const thensor<T, 2> &left);
   template<typename T, int _dim>
   thensor<T, _dim>& zero_set(thensor<T, _dim>&);
-  
+  template<typename T, int _dim, typename... Args>
+  thensor<T, _dim> zero_thensor(Args... args);
   
   template<typename T, int _dim>
   class thensor : public Container
@@ -64,6 +68,7 @@ namespace linal
   
   public:
       typedef T d_type;
+      static const int d_dim = _dim;
       
       friend thensor<T, _dim> operator+<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
       friend thensor<T, _dim> operator-<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
@@ -72,7 +77,8 @@ namespace linal
       friend thensor<T, _dim> operator^<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
       friend thensor<T, _dim> operator*<T>(const thensor<T, _dim> &left, const thensor<T, _dim> &right);
       friend std::ostream &operator<<<T>(std::ostream &os, const thensor<T, _dim> &th);
-      
+      template<typename S, int d>
+      friend thensor<S, d> &operator<<(thensor<S, d> &left, const thensor<S, d> &right);
       template<typename U, typename S, int d>
       friend thensor<S, d> operator*(const U &left, const thensor<S, d> &right);
       template<typename U, typename S, int d>
@@ -87,7 +93,9 @@ namespace linal
       thensor<T, _dim> &operator&=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator|=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator^=(const thensor<T, _dim> &right);
+      template<typename S> thensor<T, _dim> &operator*=(const S& right);
       thensor<T, _dim> &operator*=(const thensor<T, _dim> &right);
+      
       thensor<T, _dim> &operator/=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator=(const thensor<T, _dim> &right) & { _data = right._data; return *this; };
       thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & noexcept { _data = std::move(right._data); return *this; };
@@ -133,6 +141,7 @@ namespace linal
   
   public:
       typedef T d_type;
+      static const int d_dim = 1;
       
       friend thensor<T, 1> operator+<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
       friend thensor<T, 1> operator-<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
@@ -141,7 +150,8 @@ namespace linal
       friend thensor<T, 1> operator^<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
       friend thensor<T, 1> operator*<T>(const thensor<T, 1> &left, const thensor<T, 1> &right);
       friend std::ostream &operator<<<T>(std::ostream &os, const thensor<T, 1> &th);
-      
+      template<typename S, int d>
+      friend thensor<S, d> &operator<<(thensor<S, d> &left, const thensor<S, d> &right);
       template<typename U, typename S, int d>
       friend thensor<S, d> operator*(const U &left, const thensor<S, d> &right);
       template<typename U, typename S, int d>
@@ -156,6 +166,7 @@ namespace linal
       thensor<T, 1> &operator&=(const thensor<T, 1> &right);
       thensor<T, 1> &operator|=(const thensor<T, 1> &right);
       thensor<T, 1> &operator^=(const thensor<T, 1> &right);
+      template<typename S> thensor<T, 1> &operator*=(const S& right);
       thensor<T, 1> &operator*=(const thensor<T, 1> &right);
       thensor<T, 1> &operator/=(const thensor<T, 1> &right);
       thensor<T, 1> &operator=(const thensor<T, 1> &right) & { _data = right._data; return *this; };
@@ -375,6 +386,12 @@ namespace linal
   }
   
   template<typename T, int _dim>
+  thensor<T, _dim> &operator<<(thensor<T, _dim> &left, const thensor<T, _dim> &right)
+  {
+      std::move(left._data) = std::move(right._data);
+  }
+  
+  template<typename T, int _dim>
   std::ostream &operator<<(std::ostream &os, const thensor<T, _dim> &th)
   {
       std::vector<int> shape = th.shape();
@@ -402,6 +419,13 @@ namespace linal
           data[i] = T();
       }
       return src;
+  }
+  template<typename T, int _dim, typename... Args>
+  thensor<T, _dim> zero_thensor(Args... args)
+  {
+       thensor<T, _dim> res(args...);
+       zero_set(res);
+       return res;
   }
   
   template<typename T, int _dim>
@@ -526,6 +550,19 @@ namespace linal
   }
   
   template<typename T, int _dim>
+  template<typename S>
+  thensor<T, _dim> &thensor<T, _dim>::operator*=(const S &right)
+  {
+      T *lhs = data();
+      int sz = size();
+      for (int i = 0; i < sz; i++)
+      {
+          lhs[i] = static_cast<T>(right * lhs[i]);
+      }
+      return *this;
+  }
+  
+  template<typename T, int _dim>
   inline thensor<T, _dim> &thensor<T, _dim>::operator*=(const thensor<T, _dim> &right)
   {
       assert(size() == right.size());
@@ -555,7 +592,6 @@ namespace linal
       return *this;
   }
   
-
   template<typename T>
   inline T& thensor<T, 1>::operator[](int idx) const
   {
@@ -674,6 +710,19 @@ namespace linal
   }
   
   template<typename T>
+  template<typename S>
+  thensor<T, 1> &thensor<T, 1>::operator*=(const S &right)
+  {
+      T *lhs = data();
+      int sz = size();
+      for (int i = 0; i < sz; i++)
+      {
+          lhs[i] = static_cast<T>(right * lhs[i]);
+      }
+      return *this;
+  }
+  
+  template<typename T>
   inline thensor<T, 1> &thensor<T, 1>::operator*=(const thensor<T, 1> &right)
   {
       assert(size() == right.size());
@@ -702,7 +751,7 @@ namespace linal
       }
       return *this;
   }
-  
+
   
 }
 
