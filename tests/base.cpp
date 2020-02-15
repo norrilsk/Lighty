@@ -310,14 +310,15 @@ namespace test
 		Sequential net;
 		int N1 = 500;
 		int N2 = 500;
-		int N3 = 100;
+		int N3 = 500;
 		net.addDense1D<float,float>(2,N1);
 		net.addRelu1D<float,float>();
 		net.addDense1D<float,float>(N1,N2);
 		net.addRelu1D<float,float>();
 		net.addDense1D<float,float>(N2,1);
-		
-		net.train<fmat,fmat,MSE<float,float> >(x,y,10,100,verbose);
+		//net.addSigmoid1D<float,float>();
+		net.set_optimizers(optim::OPTIMIZER_MOMENTUM,1e-2);
+		net.train<fmat,fmat,MSE<float,float> >(x,y,2,200,verbose);
 		MSE<float,float> mse;
   
   
