@@ -90,10 +90,10 @@ namespace linal
       thensor<T, _dim> &operator*=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator/=(const thensor<T, _dim> &right);
       thensor<T, _dim> &operator=(const thensor<T, _dim> &right) & { _data = right._data; return *this; };
-      thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & { _data = std::move(right._data); return *this; };
+      thensor<T, _dim> &operator=(thensor<T, _dim> &&right) & noexcept { _data = std::move(right._data); return *this; };
       thensor<T, _dim> &operator=(const thensor<T, _dim> &right) && { std::move(_data) = right._data; return *this; };
       thensor<T, _dim> &operator=(thensor<T, _dim> &&right) && { std::move(_data) = std::move(right._data); return *this; };
-      T dot(const thensor<T, _dim> &right);
+      T dot(const thensor<T, _dim> &right) const;
       
       thensor<T, _dim - 1> operator[](int idx) const;
       
@@ -162,7 +162,7 @@ namespace linal
       thensor<T, 1> &operator=(thensor<T, 1> &&right) & { _data = std::move(right._data); return *this; };
       thensor<T, 1> &operator=(const thensor<T, 1> &right) && { std::move(_data) = right._data; return *this; };
       thensor<T, 1> &operator=(thensor<T, 1> &&right) && { std::move(_data) = std::move(right._data); return *this; };
-      T dot(const thensor<T, 1> &right);
+      T dot(const thensor<T, 1> &right) const;
       
       T& operator[](int idx) const;
       
@@ -268,7 +268,8 @@ namespace linal
       thensor<S,_dim> tmp(right);
       S *lhs = tmp.data();
       const S *rhs = right.data();
-      for (int i = 0; i < right.size(); i++)
+	  int sz = right.size();
+      for (int i = 0; i < sz; i++)
       {
           lhs[i] = left*rhs[i];
       }
@@ -414,7 +415,7 @@ namespace linal
   }
   
   template<typename T, int _dim>
-  inline T thensor<T, _dim>::dot(const thensor<T, _dim> &right)
+  inline T thensor<T, _dim>::dot(const thensor<T, _dim> &right) const
   {
       assert(right.size() == size());
       assert(size() > 0);
@@ -562,7 +563,7 @@ namespace linal
   }
   
   template<typename T>
-  inline T thensor<T, 1>::dot(const thensor<T, 1> &right)
+  inline T thensor<T, 1>::dot(const thensor<T, 1> &right) const
   {
       assert(right.size() == size());
       assert(size() > 0);
