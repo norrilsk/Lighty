@@ -12,6 +12,7 @@
 #include<functional>
 #include"Layers.hpp"
 #include <iostream>
+#include <chrono>
 #include "Optimizers.hpp"
 class Sequential
 {
@@ -76,6 +77,7 @@ void Sequential::train(const T & data, T2& labels, int batch_size,
     for (int i = 0 ; i < epochs; i++)
     {
         auto loss  = decltype(loss_function(label_batch,label_batch))();
+        auto start = std::chrono::high_resolution_clock::now();
         std::shuffle(indexes.begin(), indexes.end(), generator);
         int j = 0;
         for (j = 0 ; j <= N - batch_size; j+= batch_size)
@@ -106,7 +108,11 @@ void Sequential::train(const T & data, T2& labels, int batch_size,
             }
         }
         if (verbose)
-            std::cout<<"epoch # " <<  i << "\t loss = " << loss/(N/batch_size) <<std::endl;
+        {
+            auto end = std::chrono::high_resolution_clock::now();
+            long dif = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            std::cout << "epoch # " << i << "\t loss = " << loss / (N / batch_size) << " (" << dif <<" ms)"<< std::endl;
+        }
     }
 }
 template<typename T, typename Tret>

@@ -7,7 +7,8 @@
 #include "../Losses.hpp"
 #include "base.hpp"
 #include "../Nets.hpp"
-#include<fstream>
+#include <fstream>
+#include <chrono>
 namespace test
 {
     bool dense_net(bool verbose)
@@ -288,7 +289,7 @@ namespace test
 	
 	bool sequention_net(bool verbose)
 	{
-		int Npoints = 1000;
+		int Npoints = 10000;
 		fmat x({Npoints,2}), y({Npoints,1}),
 			xt({Npoints,2}), yt({Npoints,1});
 		static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
@@ -308,20 +309,26 @@ namespace test
 			yt[i][0] = ((x1*x1 + x2*x2) < 1.f) ? 1.f : 0.f;
 		}
 		Sequential net;
-		int N1 = 500;
-		int N2 = 500;
-		int N3 = 500;
+		int N1 = 40;
+		int N2 = 30;
+		int N3 = 20;
+		int N4 = 30;
+		int N5 = 40;
 		net.addDense1D<float,float>(2,N1);
 		net.addRelu1D<float,float>();
 		net.addDense1D<float,float>(N1,N2);
+        net.addRelu1D<float,float>();
+		net.addDense1D<float,float>(N2,N3);
 		net.addRelu1D<float,float>();
-		net.addDense1D<float,float>(N2,1);
+		net.addDense1D<float,float>(N3,N4);
+		net.addRelu1D<float,float>();
+		net.addDense1D<float,float>(N4,N5);
+		net.addSigmoid1D<float,float>();
+		net.addDense1D<float,float>(N5,1);
 		//net.addSigmoid1D<float,float>();
-		net.set_optimizers(optim::OPTIMIZER_RMSPROP,1e-2);
-		net.train<fmat,fmat,MSE<float,float> >(x,y,2,200,verbose);
+		net.set_optimizers(optim::OPTIMIZER_ADAM,1e-3);
+		net.train<fmat,fmat,MSE<float,float> >(x, y, 100, 300, verbose);
 		MSE<float,float> mse;
-  
-  
 		
 		fmat ans = net.predict_batch<fmat, fmat>(x);
 		if (verbose)
