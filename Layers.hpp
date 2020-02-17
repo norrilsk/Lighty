@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include "linal/thensor.hpp"
+#include "linal/algebra.hpp"
 #include "Optimizers.hpp"
 #include <chrono>
 typedef linal::thensor<float,1> fvec;

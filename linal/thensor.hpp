@@ -50,10 +50,6 @@ namespace linal
   template<typename T>
   thensor<T, 1> operator*(const thensor<T, 2> &left, const thensor<T, 1> &right);
   template<typename T>
-  thensor<T, 2> matmul(const thensor<T, 2> &left, const thensor<T, 2> &right);
-  template<typename T>
-  thensor<T, 2> matmul(const thensor<T, 1> &left, const thensor<T, 1> &right);
-  template<typename T>
   thensor<T, 2> transpose(const thensor<T, 2> &left);
   template<typename T, int _dim>
   thensor<T, _dim>& zero_set(thensor<T, _dim>&);
@@ -310,55 +306,6 @@ namespace linal
           }
       }
       
-      return res;
-  }
-  
-  template<typename T>
-  thensor<T,2> matmul (const thensor<T,1>& left, const thensor<T,1>& right)
-  {
-      int shp0 = right.size();
-      int shp1 = left.size();
-      thensor<T,2> res({shp0, shp1});
-      T* dst = res.data();
-      const T* l = left.data();
-      const T* r = right.data();
-      
-      for(int i = 0; i < shp0; i++)
-      {
-          for(int j = 0; j < shp1; j++, dst++)
-          {
-              *dst = l[j]*r[i];
-          }
-      }
-      
-      return res;
-  }
-  
-  template<typename T>
-  thensor<T, 2> matmul(const thensor<T, 2> &left, const thensor<T, 2> &right)
-  {
-      const T* lhs = left.data();
-      const T* rhs = right.data();
-      int M = left.shape()[0];
-      int N = right.shape()[1];
-      int K = left.shape()[1];
-      assert(right.shape()[0] == K);
-      thensor<T,2> res({M,N});
-      T* dst = res.data();
-      for (int i = 0; i < M; i++)
-      {
-          T * dst_row = dst + i * N;
-          const T * lhs_row = lhs + i * K;
-          for (int j = 0; j < N; j++)
-              dst_row[j] = T();
-          for (int k = 0; k < K; k++)
-          {
-              const T * rhs_row = rhs  + k * N;
-              T lhs_val = lhs_row[k];
-              for (int j = 0; j < N; ++j)
-                  dst_row[j] += lhs_val * rhs_row[j];
-          }
-      }
       return res;
   }
   
