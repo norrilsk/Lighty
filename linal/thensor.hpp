@@ -336,6 +336,7 @@ namespace linal
   thensor<T, _dim> &operator<<(thensor<T, _dim> &left, const thensor<T, _dim> &right)
   {
       std::move(left._data) = std::move(right._data);
+	  return left;
   }
   
   template<typename T, int _dim>

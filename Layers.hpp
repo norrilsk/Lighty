@@ -84,8 +84,8 @@ _bias_optimizer(std::move(bias_optimizer))
     // TODO: think about correct initialization (may be some articles)
 
     static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
-    std::normal_distribution<float> distribution{0.0,0.01};
-    std::normal_distribution<float> distribution_b{0.005,0.005};
+    std::normal_distribution<float> distribution{0.0f,0.01f};
+    std::normal_distribution<float> distribution_b{0.005f,0.005f};
     for(int i = 0 ; i <outputSize; i++)
     {
         _bias[i] = distribution_b(generator);

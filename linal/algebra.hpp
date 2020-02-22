@@ -72,13 +72,51 @@ namespace linal
   template<typename T>
   thensor<T, 2> conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel,int stride , int padding, T padding_val )
   {
+	  thensor<T, 2> mat;
+	  assert(padding >= 0);
+	  assert(stride > 0);
       if (padding !=0)
       {
-          assert(0);
-      }
+		  const int rows = src.shape()[0] + 2 * padding;
+		  const int cols = src.shape()[1] + 2 * padding;
+		  mat = thensor<T, 2>({ rows, cols});
+		  for (int i = 0; i < padding; i++)
+		  {
+			  for (int j = 0; j < cols; j++)
+			  {
+				  mat[i][j] = padding_val;
+			  }
+		  }
+		  for (int i = padding; i < rows - padding; i++)
+		  {
+			  for (int j = 0; j < padding; j++)
+			  {
+				  mat[i][j] = padding_val;
+			  }
+			  for (int j = padding; j < cols - padding; j++)
+			  {
+				  mat[i][j] = src[i - padding][j - padding];
+			  }
+			  for (int j = cols - padding; j < cols; j++)
+			  {
+				  mat[i][j] = padding_val;
+			  }
+		  }
+		  for (int i = rows - padding; i < rows; i++)
+		  {
+			  for (int j = 0; j < cols; j++)
+			  {
+				  mat[i][j] = padding_val;
+			  }
+		  }
+	  }
+	  else
+	  {
+		  mat = src;
+	  }
       const int k_rows = kernel.shape()[0], k_cols = kernel.shape()[1];
-      const int s_rows = src.shape()[0], s_cols = src.shape()[1];
-      thensor<T,2> dst({( s_rows - k_rows + 1)/stride, (s_cols - k_cols + 1)/stride});
+      const int s_rows = mat.shape()[0], s_cols = mat.shape()[1];
+      thensor<T,2> dst({( s_rows - k_rows + stride)/stride, (s_cols - k_cols + stride)/stride});
       
       for (int m = 0; m < s_rows - k_rows + 1; m+=stride)
       {
@@ -89,10 +127,10 @@ namespace linal
               {
                   for(int j = 0; j < k_cols; j++)
                   {
-                      tmp+=src[m+i][n+j]*kernel[i][j];
+                      tmp+=mat[m+i][n+j]*kernel[i][j];
                   }
               }
-              dst[m][n] = tmp;
+              dst[m/stride][n/stride] = tmp;
           }
       }
       return dst;

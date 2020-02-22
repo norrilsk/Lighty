@@ -19,5 +19,6 @@ namespace test
   bool thensor_test3(bool verbose = false);
   bool thensor_test4(bool verbose = false);
   bool linal_conv2d(bool verbose = false);
+  bool linal_conv2d_2(bool verbose = false);
 }
 #endif //LIGHTY_BASE_HPP

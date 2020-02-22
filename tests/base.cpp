@@ -692,4 +692,52 @@ namespace test
         return check;
         
     }
+
+	bool linal_conv2d_2(bool verbose)
+	{
+		std::cout << "CONVOLUTION TEST 2\t";
+		linal::thensor<int, 2> mat({ 3,3 });
+		mat[0][0] = 3;
+		mat[0][1] = 4;
+		mat[0][2] = 5;
+
+		mat[1][0] = 6;
+		mat[1][1] = 7;
+		mat[1][2] = 8;
+
+		mat[2][0] = 9;
+		mat[2][1] = 10;
+		mat[2][2] = 11;
+
+		linal::thensor<int, 2> kernel({ 2,2 });
+
+		kernel[0][0] = 1;
+		kernel[0][1] = 2;
+		kernel[1][0] = -1;
+		kernel[1][1] = 3;
+
+
+		linal::thensor<int, 2> checker({ 2,2 });
+		checker[0][0] = 9;
+		checker[0][1] = 11;
+		checker[1][0] = 39;
+		checker[1][1] = 46;
+		bool check = false;
+		linal::thensor<int, 2> res = linal::conv2d(mat, kernel,2,1,0);
+		check = res == checker;
+		if (verbose)
+		{
+			std::cout << "\n\nafter test:\n\n\n result : \n" << res << "\n\nexpected\n" << checker << "\n\n";
+		}
+		if (check)
+		{
+			std::cout << "OK" << std::endl;
+		}
+		else
+		{
+			std::cout << "FAILED" << std::endl;
+		}
+		return check;
+
+	}
 }
