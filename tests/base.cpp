@@ -12,7 +12,20 @@
 #include <chrono>
 namespace test
 {
-    bool dense_net(bool verbose)
+  template<typename T , int _dim>
+  void fill(linal::thensor<T,_dim> &th, std::function<T()> initializer);
+  
+  template<typename T, int _dim>
+  void fill(linal::thensor<T, _dim> &th, std::function<T()> initializer)
+  {
+	T* ptr = th.data();
+	for (int i = 0; i < th.size(); i++)
+	{
+		ptr[i] = initializer();
+	}
+  }
+  
+  bool dense_net(bool verbose)
     {
         std::cout<< "DENSE NET TEST" <<std::endl;
         std::cout<< "COPY OF DENSE LAYER TEST WITH NET API"<<std::endl;
@@ -740,4 +753,144 @@ namespace test
 		return check;
 
 	}
+  
+  bool linal_conv2d_3(bool verbose)
+  {
+	  std::cout << "CONVOLUTION TEST 3\t";
+	  linal::thensor<int, 3> mat({ 3,3,3});
+	  mat[0][0][0] = 1;   mat[0][0][1] = 2;   mat[0][0][2] = 0;
+	  mat[0][1][0] = 1;   mat[0][1][1] = 1;   mat[0][1][2] = 3;
+	  mat[0][2][0] = 0;   mat[0][2][1] = 2;   mat[0][2][2] = 2;
+	
+	  mat[1][0][0] = 0;   mat[1][0][1] = 2;   mat[1][0][2] = 1;
+	  mat[1][1][0] = 0;   mat[1][1][1] = 3;   mat[1][1][2] = 2;
+	  mat[1][2][0] = 1;   mat[1][2][1] = 1;   mat[1][2][2] = 0;
+	
+	  mat[2][0][0] = 1;   mat[2][0][1] = 2;   mat[2][0][2] = 1;
+	  mat[2][1][0] = 0;   mat[2][1][1] = 1;   mat[2][1][2] = 3;
+	  mat[2][2][0] = 3;   mat[2][2][1] = 3;   mat[2][2][2] = 2;
+	  
+	  
+	  //input channels, output_channels, rows , cols 
+	  linal::thensor<int, 4> kernel({ 3, 2, 2, 2 });
+	  
+	  kernel[0][0][0][0] = 1;   kernel[0][0][0][1] = 1;
+	  kernel[0][0][1][0] = 2;   kernel[0][0][1][1] = 2;
+	
+	  kernel[0][1][0][0] = 1;   kernel[0][1][0][1] = 0;
+	  kernel[0][1][1][0] = 0;   kernel[0][1][1][1] = 1;
+	  
+	  
+	  kernel[1][0][0][0] = 1;   kernel[1][0][0][1] = 1;
+	  kernel[1][0][1][0] = 1;   kernel[1][0][1][1] = 1;
+	
+	  kernel[1][1][0][0] = 2;   kernel[1][1][0][1] = 1;
+	  kernel[1][1][1][0] = 2;   kernel[1][1][1][1] = 1;
+	  
+	
+	  kernel[2][0][0][0] = 0;   kernel[2][0][0][1] = 1;
+	  kernel[2][0][1][0] = 1;   kernel[2][0][1][1] = 0;
+	
+	  kernel[2][1][0][0] = 1;   kernel[2][1][0][1] = 2;
+	  kernel[2][1][1][0] = 2;   kernel[2][1][1][1] = 0;
+	  
+	  linal::thensor<int, 3> checker({ 2, 2, 2});
+	  
+	  checker[0][0][0] = 14;   checker[0][0][1] = 20;
+	  checker[0][1][0] = 15;   checker[0][1][1] = 24;
+	
+	  checker[1][0][0] = 12;   checker[1][0][1] = 24;
+	  checker[1][1][0] = 17;   checker[1][1][1] = 26;
+	  bool check = false;
+	  linal::thensor<int, 3> res = linal::conv2d(mat, kernel);
+	  check = res == checker;
+	  if (verbose)
+	  {
+		  std::cout << "\n\nafter test:\n\n\n result : \n" << res << "\n\nexpected\n" << checker << "\n\n";
+	  }
+	  if (check)
+	  {
+		  std::cout << "OK" << std::endl;
+	  }
+	  else
+	  {
+		  std::cout << "FAILED" << std::endl;
+	  }
+	  return check;
+  }
+  bool linal_conv_unroll(bool verbose)
+  {
+	  std::cout << "UNROLL TEST\t";
+	  linal::thensor<int, 2> mat({ 3,3});
+	  mat[0][0] = 1;   mat[0][1] = 2;   mat[0][2] = 0;
+	  mat[1][0] = 1;   mat[1][1] = 1;   mat[1][2] = 3;
+	  mat[2][0] = 0;   mat[2][1] = 2;   mat[2][2] = 2;
+	
+	  linal::thensor<int, 2> checker({ 4,4});
+	  checker[0][0] = 1;   checker[0][1] = 2;   checker[0][2] = 1;   checker[0][3] = 1;
+	  checker[1][0] = 2;   checker[1][1] = 0;   checker[1][2] = 1;   checker[1][3] = 3;
+	  checker[2][0] = 1;   checker[2][1] = 1;   checker[2][2] = 0;   checker[2][3] = 2;
+	  checker[3][0] = 1;   checker[3][1] = 3;   checker[3][2] = 2;   checker[3][3] = 2;
+	
+	  bool check = false;
+	  linal::thensor<int, 2> res = linal::experimental::unroll_image(mat, 2, 2, 1);
+	  check = res == checker;
+	  if (verbose)
+	  {
+		  std::cout << "\n\nafter test:\n\n\n result : \n" << res << "\n\nexpected\n" << checker << "\n\n";
+	  }
+	  if (check)
+	  {
+		  std::cout << "OK" << std::endl;
+	  }
+	  else
+	  {
+		  std::cout << "FAILED" << std::endl;
+	  }
+	  return check;
+  }
+  
+  bool linal_conv2d_experimental(bool verbose)
+  {
+  		linal::thensor<int,2> src({500,500});
+    	linal::thensor<int,2> kernel({7,7});
+    	linal::thensor<int,2> res1, checker;
+    	
+    	std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
+    	std::uniform_int_distribution<int> dist(-100,100);
+    	fill<int,2>(src, [&]{return dist(gen);});
+    	fill<int,2>(kernel, [&]{return dist(gen);});
+    	auto start = std::chrono::high_resolution_clock::now();
+    	checker = linal::conv2d(src,kernel,2,3,4);
+    	auto p1 = std::chrono::high_resolution_clock::now();
+    	res1 = linal::experimental::conv2d(src,kernel,2,3,4);
+    	auto p2 = std::chrono::high_resolution_clock::now();
+    	bool check = checker == res1;
+    	
+    	if (verbose)
+		{
+    		std::cout << "base time : "
+    		<< std::chrono::duration_cast<std::chrono::nanoseconds>(p1 - start).count() * 1e-6
+    		<< " ms\n";
+    		std::cout << "experimental time : "
+			<< std::chrono::duration_cast<std::chrono::nanoseconds>(p2 - p1).count() * 1e-6
+			<< " ms\n";
+    		
+    		/*std::cout << "src:\n" <<src;
+    		std::cout << "\n\nkernel:\n"<<kernel;
+    		std::cout << "\n\nres:\n" << res1;
+    		std::cout << "\n\ncontrol:\n " <<checker;*/
+		}
+		if (check)
+		{
+			std::cout << "OK" << std::endl;
+		}
+		else
+		{
+			std::cout << "FAILED" << std::endl;
+		}
+  }
 }
+
+
+

@@ -379,7 +379,7 @@ namespace linal
   template<typename T, int _dim>
   inline thensor<T, _dim - 1> thensor<T, _dim>::operator[](int idx) const
   {
-      const ThensorData<T,_dim-1>& data = _data[idx];
+      ThensorData<T,_dim-1> data = _data[idx];
       thensor<T, _dim - 1> tmp;
       
       tmp.wrap(data.data(),data.shape());
