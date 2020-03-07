@@ -852,6 +852,7 @@ namespace test
   
   bool linal_conv2d_experimental(bool verbose)
   {
+	    std::cout << "CONVOLUTION EXPERIMENTAL TEST 1\t";
   		linal::thensor<int,2> src({500,500});
     	linal::thensor<int,2> kernel({7,7});
     	linal::thensor<int,2> res1, checker;
@@ -889,6 +890,50 @@ namespace test
 		{
 			std::cout << "FAILED" << std::endl;
 		}
+  }
+  
+  bool linal_conv2d_2_experimental(bool verbose)
+  {
+	  std::cout << "CONVOLUTION EXPERIMENTAL TEST 2\t";
+      linal::thensor<int,3> src({10,256,256});
+      linal::thensor<int,4> kernel({10,20,3,3});
+      linal::thensor<int,3> res1, checker;
+      
+      std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
+      std::uniform_int_distribution<int> dist(-100,100);
+      fill<int,3>(src, [&]{return dist(gen);});
+      fill<int,4>(kernel, [&]{return dist(gen);});
+      auto start = std::chrono::high_resolution_clock::now();
+      checker = linal::conv2d(src,kernel,2,3,4);
+      auto p1 = std::chrono::high_resolution_clock::now();
+      res1 = linal::experimental::conv2d(src,kernel,2,3,4);
+      auto p2 = std::chrono::high_resolution_clock::now();
+      bool check = checker == res1;
+      
+      if (verbose)
+      {
+          std::cout << "base time : "
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(p1 - start).count() * 1e-6
+                    << " ms\n";
+          std::cout << "experimental time : "
+                    << std::chrono::duration_cast<std::chrono::nanoseconds>(p2 - p1).count() * 1e-6
+                    << " ms\n";
+	
+//		  std::cout << "\n\nkernel:\n"<<kernel;
+//		  std::cout << "\n\nunrolled kernel:\n"<<linal::experimental::unroll_kernel(kernel);
+//          std::cout << "\n\nsrc:\n" <<src;
+//		  std::cout << "\n\nunrolled src:\n" <<linal::experimental::unroll_image(src,kernel.shape(),1);
+//          std::cout << "\n\nres:\n" << res1;
+//          std::cout << "\n\ncontrol:\n " <<checker;
+      }
+      if (check)
+      {
+          std::cout << "OK" << std::endl;
+      }
+      else
+      {
+          std::cout << "FAILED" << std::endl;
+      }
   }
 }
 

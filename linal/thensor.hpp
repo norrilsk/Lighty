@@ -51,6 +51,8 @@ namespace linal
   thensor<T, 1> operator*(const thensor<T, 2> &left, const thensor<T, 1> &right);
   template<typename T>
   thensor<T, 2> transpose(const thensor<T, 2> &left);
+  template<typename T,int _dim_src,int _dim_dst>
+  thensor<T,_dim_dst> reshape(const thensor<T,_dim_src> &src,const std::vector<int> &new_shape);
   template<typename T, int _dim>
   thensor<T, _dim>& zero_set(thensor<T, _dim>&);
   template<typename T, int _dim, typename... Args>
@@ -291,25 +293,6 @@ namespace linal
   }
   
   template<typename T>
-  thensor<T, 2> transpose(const thensor<T, 2> &left)
-  {
-      auto& shp = left.shape();
-      thensor<T,2> res({shp[1],shp[0]});
-      const T* col = left.data();
-      T* dst = res.data();
-      for (int i = 0 ; i < shp[1]; i++,col++)
-      {
-          const T* src =col;
-          for (int j = 0; j < shp[0]; j++,src+=shp[1],dst++)
-          {
-              *dst = *src;
-          }
-      }
-      
-      return res;
-  }
-  
-  template<typename T>
   thensor<T, 1> operator*(const thensor<T, 2> &left, const thensor<T, 1> &right)
   {
       assert(left.shape()[1] == right.shape()[0]);
@@ -357,23 +340,6 @@ namespace linal
           os << th.data()[i]<< ' ';
       }
       return os;
-  }
-  template<typename T, int _dim>
-  thensor<T, _dim> &zero_set(thensor<T, _dim> & src)
-  {
-      T* data = src.data();
-      for (int i = 0; i < src.size(); i++)
-      {
-          data[i] = T();
-      }
-      return src;
-  }
-  template<typename T, int _dim, typename... Args>
-  thensor<T, _dim> zero_thensor(Args... args)
-  {
-       thensor<T, _dim> res(args...);
-       zero_set(res);
-       return res;
   }
   
   template<typename T, int _dim>
@@ -698,6 +664,57 @@ namespace linal
           lhs[i] /= rhs[i];
       }
       return *this;
+  }
+  
+  template<typename T>
+  thensor<T, 2> transpose(const thensor<T, 2> &left)
+  {
+      auto& shp = left.shape();
+      thensor<T,2> res({shp[1],shp[0]});
+      const T* col = left.data();
+      T* dst = res.data();
+      for (int i = 0 ; i < shp[1]; i++,col++)
+      {
+          const T* src =col;
+          for (int j = 0; j < shp[0]; j++,src+=shp[1],dst++)
+          {
+              *dst = *src;
+          }
+      }
+      
+      return res;
+  }
+  
+  template<typename T, int _dim>
+  thensor<T, _dim> &zero_set(thensor<T, _dim> & src)
+  {
+      T* data = src.data();
+      for (int i = 0; i < src.size(); i++)
+      {
+          data[i] = T();
+      }
+      return src;
+  }
+  template<typename T, int _dim, typename... Args>
+  thensor<T, _dim> zero_thensor(Args... args)
+  {
+      thensor<T, _dim> res(args...);
+      zero_set(res);
+      return res;
+  }
+  
+  template<typename T, int _dim_src, int _dim_dst>
+  thensor<T, _dim_dst> reshape(const thensor<T, _dim_src> &src, const std::vector<int> &new_shape)
+  {
+      int new_size = 1;
+      for (auto& sh : new_shape)
+      {
+          new_size *=sh;
+      }
+      assert(new_size == src.size());
+      thensor<T, _dim_dst> res(new_shape);
+      std::copy(src.data(), src.data() + src.size(), res.data());
+      return res;
   }
 
   

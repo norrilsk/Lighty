@@ -15,7 +15,8 @@ int main()
 	test::linal_conv2d_2();
 	test::linal_conv2d_3();
 	test::linal_conv_unroll();
-	test::linal_conv2d_experimental(true);
+	test::linal_conv2d_experimental();
+    test::linal_conv2d_2_experimental(true);
 	//test::sequention_net(true);
 	//test::dense_net(true);
 	//test::dense_net_sin(true);
