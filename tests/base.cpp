@@ -10,6 +10,7 @@
 #include "../Nets.hpp"
 #include <fstream>
 #include <chrono>
+#include <ctime>
 namespace test
 {
   template<typename T , int _dim>
@@ -833,7 +834,7 @@ namespace test
 	  checker[3][0] = 1;   checker[3][1] = 3;   checker[3][2] = 2;   checker[3][3] = 2;
 	
 	  bool check = false;
-	  linal::thensor<int, 2> res = linal::experimental::unroll_image(mat, 2, 2, 1);
+	  linal::thensor<int, 2> res = linal::unroll_image( mat,2, 2, 1,1);
 	  check = res == checker;
 	  if (verbose)
 	  {
@@ -853,7 +854,7 @@ namespace test
   bool linal_conv2d_experimental(bool verbose)
   {
 	    std::cout << "CONVOLUTION EXPERIMENTAL TEST 1\t";
-  		linal::thensor<int,2> src({500,500});
+  		linal::thensor<int,2> src({50,50});
     	linal::thensor<int,2> kernel({7,7});
     	linal::thensor<int,2> res1, checker;
     	
@@ -862,9 +863,9 @@ namespace test
     	fill<int,2>(src, [&]{return dist(gen);});
     	fill<int,2>(kernel, [&]{return dist(gen);});
     	auto start = std::chrono::high_resolution_clock::now();
-    	checker = linal::conv2d(src,kernel,2,3,4);
+    	checker = linal::depricated::conv2d(src,kernel,2,3,4);
     	auto p1 = std::chrono::high_resolution_clock::now();
-    	res1 = linal::experimental::conv2d(src,kernel,2,3,4);
+    	res1 = linal::conv2d(src,kernel,2,3,4);
     	auto p2 = std::chrono::high_resolution_clock::now();
     	bool check = checker == res1;
     	
@@ -890,12 +891,13 @@ namespace test
 		{
 			std::cout << "FAILED" << std::endl;
 		}
+		return check;
   }
   
   bool linal_conv2d_2_experimental(bool verbose)
   {
 	  std::cout << "CONVOLUTION EXPERIMENTAL TEST 2\t";
-      linal::thensor<int,3> src({10,256,256});
+      linal::thensor<int,3> src({10,128,128});
       linal::thensor<int,4> kernel({10,20,3,3});
       linal::thensor<int,3> res1, checker;
       
@@ -904,9 +906,9 @@ namespace test
       fill<int,3>(src, [&]{return dist(gen);});
       fill<int,4>(kernel, [&]{return dist(gen);});
       auto start = std::chrono::high_resolution_clock::now();
-      checker = linal::conv2d(src,kernel,2,3,4);
+      checker = linal::depricated::conv2d(src,kernel,2,3,4);
       auto p1 = std::chrono::high_resolution_clock::now();
-      res1 = linal::experimental::conv2d(src,kernel,2,3,4);
+      res1 = linal::conv2d(src,kernel,2,3,4);
       auto p2 = std::chrono::high_resolution_clock::now();
       bool check = checker == res1;
       
@@ -934,6 +936,7 @@ namespace test
       {
           std::cout << "FAILED" << std::endl;
       }
+	  return check;
   }
 }
 

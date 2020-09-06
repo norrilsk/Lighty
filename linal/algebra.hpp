@@ -9,31 +9,54 @@ namespace linal
 {
   namespace experimental
   {
-    template<typename T>
-    thensor<T,2> unroll_kernel(const thensor<T,2> &kernel);
-    template<typename T>
-    thensor<T,2> unroll_image(const thensor<T,2> &img, int k_rows, int k_cols, int stride);
-    template<typename T>
-    thensor<T,2> padd_image(const thensor<T,2> &img, int padding, T padding_val = T());
-    template<typename T>
-    thensor<T,2> conv2d(const thensor<T,2> &src, const thensor<T,2> &kernel, int stride = 1, int padding=0, T padding_val = T());
-    template<typename T>
-    thensor<T,2> unroll_kernel(const thensor<T,4> &kernel);
-    template<typename T>
-    thensor<T,2> unroll_image(const thensor<T,3> &img,const std::vector<int> &new_shape, int stride);
-    template<typename T>
-    thensor<T,3> padd_image(const thensor<T,3> &img, int padding, T padding_val = T());
-    template<typename T>
-    thensor<T,3> conv2d(const thensor<T,3> &src, const thensor<T,4> &kernel, int stride = 1, int padding=0, T padding_val = T());
   }
+  namespace depricated
+  {
+	  template<typename T>
+	  thensor<T, 3> conv2d(const thensor<T, 3> &src, const thensor<T, 4> &kernel, int stride = 1, int padding = 0, T padding_val = T());
+	  template<typename T>
+	  thensor<T, 2> conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel, int stride = 1, int padding = 0, T padding_val = T());
+  }
+  template<typename T>
+  thensor<T, 2> unroll_kernel(const thensor<T, 2> &kernel);
+  template<typename T>
+  thensor<T, 2> unroll_image(const thensor<T, 2> &img, int k_rows, int k_cols, int stride_vert, int stride_hor);
+  template<typename T>
+  thensor<T, 2> padd_image(const thensor<T, 2> &img, int pad_rows, int pad_cols, T padding_val = T());
+  template<typename T>
+  thensor<T, 2> conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel, std::tuple<int, int> stride , std::tuple<int, int> padding, T padding_val = T());
+  template<typename T>
+  thensor<T, 2> conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel, int stride = 1 , int padding = 0 , T padding_val = T());
+  template<typename T>
+  thensor<T, 2> unroll_kernel(const thensor<T, 4> &kernel);
+  template<typename T>
+  thensor<T, 2> unroll_image(const thensor<T, 3> &img, const std::vector<int> &new_shape, int stride_vert, int stride_hor);
+  template<typename T>
+  thensor<T, 3> padd_image(const thensor<T, 3> &img, int pad_rows, int pad_cols, T padding_val = T());
+  template<typename T>
+  thensor<T, 3> conv2d(const thensor<T, 3> &src, const thensor<T, 4> &kernel, std::tuple<int, int> stride , std::tuple<int, int> padding, T padding_val = T());
+  template<typename T>
+  thensor<T, 3> conv2d(const thensor<T, 3> &src, const thensor<T, 4> &kernel, int  stride =  1, int padding =  0, T padding_val = T());
+
   template<typename T>
   thensor<T, 2> matmul(const thensor<T, 2> &left, const thensor<T, 2> &right);
   template<typename T>
   thensor<T, 2> matmul(const thensor<T, 1> &left, const thensor<T, 1> &right);
+
   template<typename T>
-  thensor<T,3> conv2d(const thensor<T,3> &src, const thensor<T,4> &kernel, int stride = 1, int padding=0, T padding_val = T());
+  thensor<T, 3> conv2d(const thensor<T, 3> &src, const thensor<T, 4> &kernel, int stride, int padding , T padding_val )
+  {
+	  return conv2d(src, kernel, { stride,stride }, { padding,padding }, padding_val);
+  }
+
   template<typename T>
-  thensor<T,2> conv2d(const thensor<T,2> &src, const thensor<T,2> &kernel, int stride = 1, int padding=0, T padding_val = T());
+  thensor<T, 2> conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel,int  stride , int padding , T padding_val )
+  {
+	  return conv2d(src, kernel, { stride,stride }, { padding,padding }, padding_val);
+  }
+
+
+
   template<typename T>
   thensor<T,2> matmul (const thensor<T,1>& left, const thensor<T,1>& right)
   {
@@ -83,7 +106,7 @@ namespace linal
       return res;
   }
   template<typename T>
-  thensor<T, 3> conv2d(const thensor<T, 3> &src, const thensor<T, 4> &kernel, int stride , int padding, T padding_val )
+  thensor<T, 3> depricated::conv2d(const thensor<T, 3> &src, const thensor<T, 4> &kernel, int stride , int padding, T padding_val )
   {
       assert(padding >= 0);
       assert(stride > 0);
@@ -100,14 +123,14 @@ namespace linal
           thensor<T,3> channel_kernels = kernel[i];
           for (int j = 0 ; j < d_channels; j++)
           {
-              dst[j] += conv2d(single_channel,channel_kernels[j],stride,padding,padding_val);
+              dst[j] += depricated::conv2d(single_channel,channel_kernels[j],stride,padding,padding_val);
           }
       }
       
       return dst;
   }
   template<typename T>
-  thensor<T, 2> conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel,int stride , int padding, T padding_val )
+  thensor<T, 2> depricated::conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel, int stride, int padding, T padding_val)
   {
 	  thensor<T, 2> mat;
 	  assert(padding >= 0);
@@ -175,45 +198,62 @@ namespace linal
   
   
   template<typename T>
-  thensor<T,2> experimental::padd_image(const thensor<T,2> &img, int padding, T padding_val)
+  thensor<T,2> padd_image(const thensor<T,2> &img, int pad_rows, int pad_cols, T padding_val)
   {
-      if (padding <= 0)
+      if (pad_rows <= 0 && pad_cols <= 0)
       {
           return img.copy();
       }
       const int src_rows = img.shape()[0];
       const int src_cols = img.shape()[1];
-      const int rows = src_rows + 2 * padding;
-      const int cols = src_cols + 2 * padding;
+      const int rows = src_rows + 2 * pad_rows;
+      const int cols = src_cols + 2 * pad_cols;
       
       thensor<T, 2> res({ rows, cols});
       
       T* res_d = res.data();
       const T* src_d = img.data();
-      for (int j = 0; j < cols; j++)
+	  if (pad_rows > 0)
+	  {
+		  for (int j = 0; j < cols; j++)
+		  {
+			  res_d[j] = padding_val;
+		  }
+
+		  for (int i = 1; i < pad_rows; i++)
+		  {
+			  std::copy(res_d, res_d + cols, res_d + i * cols);
+		  }
+		  for (int i = rows - pad_rows; i < rows; i++)
+		  {
+			  std::copy(res_d, res_d + cols, res_d + i * cols);
+		  }
+	  }
+	  if (pad_cols > 0)
+	  {
+		  for (int j = 0; j < pad_cols; j++)
+		  {
+			  res_d[j + cols * pad_rows] = padding_val;
+		  }
+	  }
+	  if (pad_rows < rows - pad_rows)
+	  {
+		  std::copy(src_d , src_d + src_cols
+			  , res_d + pad_rows * cols + pad_cols);
+		  std::copy(res_d, res_d + pad_cols, res_d + (pad_rows + 1) * cols - pad_cols);
+	  }
+      for (int i = pad_rows + 1 ; i < rows - pad_rows; i++)
       {
-          res_d[j] = padding_val;
-      }
-      for (int i = 1; i < padding; i++)
-      {
-          std::copy(res_d , res_d + cols, res_d + i * cols);
-      }
-      for (int i = rows - padding; i < rows; i++)
-      {
-          std::copy(res_d , res_d + cols, res_d + i * cols);
-      }
-      for (int i = padding; i < rows - padding; i++)
-      {
-          std::copy(res_d, res_d + padding,res_d + i * cols );
-          std::copy(src_d + (i - padding) * src_cols, src_d + (i - padding + 1) * src_cols
-              , res_d + i * cols  + padding);
-          std::copy(res_d, res_d + padding,res_d + (i + 1) * cols - padding);
+          std::copy(res_d, res_d + pad_cols,res_d + i * cols );
+          std::copy(src_d + (i - pad_rows) * src_cols, src_d + (i - pad_rows + 1 ) * src_cols
+              , res_d + i * cols  + pad_cols);
+          std::copy(res_d, res_d + pad_cols,res_d + (i + 1) * cols - pad_cols);
       }
       return res;
   }
   
   template<typename T>
-  thensor<T,2> experimental::unroll_kernel(const thensor<T,2> &kernel)
+  thensor<T,2> unroll_kernel(const thensor<T,2> &kernel)
   {
       const int k_rows = kernel.shape()[0], k_cols = kernel.shape()[1];
       thensor<T, 2> res({k_rows * k_cols, 1});
@@ -221,21 +261,22 @@ namespace linal
       return res;
   }
   
+
   template<typename T>
-  thensor<T,2> experimental::unroll_image(const thensor<T,2> &img, int k_rows, int k_cols, int stride){
+  thensor<T,2> unroll_image(const thensor<T,2> &img, int k_rows, int k_cols, int stride_vert, int stride_hor){
       const int i_rows = img.shape()[0], i_cols = img.shape()[1];
       const int depth = k_cols * k_rows;
-      const int r = ( i_rows - k_rows + stride) / stride, c = (i_cols - k_cols + stride) / stride;
+      const int r = ( i_rows - k_rows + stride_vert) / stride_vert, c = (i_cols - k_cols + stride_hor) / stride_hor;
       const int rows = r * c;
       
       thensor<T, 2> res({rows, depth});
       T* d_ptr = res.data();
       const T* src_row = img.data();
       
-      for (int m = 0; m < i_rows - k_rows + 1; m+=stride)
+      for (int m = 0; m < i_rows - k_rows + 1; m+= stride_vert)
       {
           const T* src_col = src_row;
-          for (int n = 0; n < i_cols - k_cols + 1; n += stride)
+          for (int n = 0; n < i_cols - k_cols + 1; n += stride_hor)
           {
               const T* src =  src_col;
               for (int i = 0 ; i < k_rows; i++)
@@ -244,47 +285,51 @@ namespace linal
                   d_ptr += k_cols;
                   src += i_rows;
               }
-              src_col += stride;
+              src_col += stride_hor;
           }
-          src_row += i_rows * stride;
+          src_row += i_rows * stride_vert;
       }
       return res;
   }
   
   template<typename T>
-  thensor<T, 2> experimental::conv2d(const thensor<T, 2> &src,
+  thensor<T, 2> conv2d(const thensor<T, 2> &src,
                                      const thensor<T, 2> &kernel,
-                                     int stride,
-                                     int padding,
+                                     std::tuple<int,int> stride,
+									 std::tuple<int, int> padding,
                                      T padding_val)
   {
-      assert(padding >= 0);
-      assert(stride > 0);
+	  int pad_rows = std::get<0>(padding);
+	  int pad_cols = std::get<1>(padding);
+	  int stride_vert = std::get<0>(stride);
+	  int stride_hor = std::get<1>(stride);
+	  assert(pad_rows >= 0 && pad_cols >= 0);
+	  assert(stride_vert > 0 && stride_hor > 0);
       thensor<T, 2> mat;
-      if (padding != 0)
-          mat = experimental::padd_image(src, padding, padding_val);
+      if (pad_rows != 0 && pad_cols != 0)
+          mat = padd_image(src, pad_rows, pad_cols, padding_val);
       else
           mat = src;
       const int k_rows = kernel.shape()[0], k_cols = kernel.shape()[1];
       const int s_rows = mat.shape()[0], s_cols = mat.shape()[1];
-      thensor<T, 2> filter = experimental::unroll_kernel(kernel);
-      thensor<T, 2> img = experimental::unroll_image(mat, k_rows,k_cols,stride);
+      thensor<T, 2> filter = unroll_kernel(kernel);
+      thensor<T, 2> img = unroll_image(mat, k_rows,k_cols, stride_vert, stride_hor);
       
       return matmul(img, filter);
   }
   
   template<typename T>
-  thensor<T,3> experimental::padd_image(const thensor<T,3> &img, int padding, T padding_val)
+  thensor<T,3> padd_image(const thensor<T,3> &img, int pad_rows, int pad_cols, T padding_val)
   {
-      if (padding <= 0)
+      if (pad_rows <= 0 && pad_cols <= 0)
       {
           return img.copy();
       }
       const int channels = img.shape()[0];
       const int src_rows = img.shape()[1];
       const int src_cols = img.shape()[2];
-      const int rows = src_rows + 2 * padding;
-      const int cols = src_cols + 2 * padding;
+      const int rows = src_rows + 2 * pad_rows;
+      const int cols = src_cols + 2 * pad_cols;
       
       thensor<T, 3> res({channels, rows, cols});
       const int s_ch_size = src_rows * src_cols;
@@ -295,35 +340,47 @@ namespace linal
           const T *src_d = img.data() + s_ch_size * k;
           if (0 == k)
           {
-              for (int j = 0; j < cols; j++)
-              {
-                  res_d[j] = padding_val;
-              }
-              for (int i = 1; i < padding; i++)
-              {
-                  std::copy(res_d, res_d + cols, res_d + i * cols);
-              }
-              std::copy(res_d, res_d + cols * padding, res_d + (rows-padding) * cols);
+			  if (pad_rows > 0)
+			  {
+				  for (int j = 0; j < cols; j++)
+				  {
+					  res_d[j] = padding_val;
+				  }
+
+				  for (int i = 1; i < pad_rows; i++)
+				  {
+					  std::copy(res_d, res_d + cols, res_d + i * cols);
+				  }
+				  std::copy(res_d, res_d + cols * pad_rows, res_d + (rows - pad_rows) * cols);
+			  }
+			  if (pad_cols > 0)
+			  {
+				  for (int j = 0; j < pad_cols; j++)
+				  {
+					  res_d[j + cols * pad_rows] = padding_val;
+				  }
+			  }
           }
           else
           {
-              std::copy(res.data(), res.data() + cols * padding, res_d);
-              std::copy(res_d, res_d + cols * padding, res_d + (rows-padding) * cols);
+              std::copy(res.data(), res.data() + cols * pad_rows, res_d);
+              std::copy(res_d, res_d + cols * pad_rows, res_d + (rows - pad_rows) * cols);
           }
-          for (int i = padding; i < rows - padding; i++)
+
+          for (int i = pad_rows; i < rows - pad_rows; i++)
           {
-              std::copy(res_d, res_d + padding, res_d + i * cols);
-              std::copy(src_d + (i - padding) * src_cols,
-                        src_d + (i - padding + 1) * src_cols,
-                        res_d + i * cols + padding);
-              std::copy(res_d, res_d + padding, res_d + (i + 1) * cols - padding);
+              std::copy(res.data(), res.data() + pad_cols, res_d + i * cols);
+              std::copy(src_d + (i - pad_rows) * src_cols,
+                        src_d + (i - pad_rows + 1) * src_cols,
+                        res_d + i * cols + pad_cols);
+              std::copy(res_d, res_d + pad_cols, res_d + (i + 1) * cols - pad_cols);
           }
       }
       return res;
   }
   
   template<typename T>
-  thensor<T,2> experimental::unroll_kernel(const thensor<T,4> &kernel)
+  thensor<T,2> unroll_kernel(const thensor<T,4> &kernel)
   {
       const int channels = kernel.shape()[0], filters = kernel.shape()[1];
       const int k_size = kernel.shape()[2]* kernel.shape()[3];
@@ -341,9 +398,9 @@ namespace linal
       }
       return transpose(resT);
   }
-  
+
   template<typename T>
-  thensor<T,2> experimental::unroll_image(const thensor<T,3> &img,const std::vector<int>& kernel_shape, int stride){
+  thensor<T,2> unroll_image(const thensor<T,3> &img,const std::vector<int>& kernel_shape, int stride_vert, int stride_hor){
       const int i_rows = img.shape()[1], i_cols = img.shape()[2];
       assert(4 == kernel_shape.size());
       assert(img.shape()[0] == kernel_shape[0]);
@@ -351,7 +408,7 @@ namespace linal
       const int k_rows = kernel_shape[2], k_cols = kernel_shape[3];
       const int ch_depth = k_rows * k_cols;
       const int ch_size = i_rows * i_cols;
-      const int r = ( i_rows - k_rows + stride) / stride, c = (i_cols - k_cols + stride) / stride;
+      const int r = ( i_rows - k_rows + stride_vert) / stride_vert, c = (i_cols - k_cols + stride_hor) / stride_hor;
       const int rows = r * c;
       
       thensor<T, 2> res({rows, depth});
@@ -361,10 +418,10 @@ namespace linal
           
           const T *src_row = img.data() + ch_size * k;
           T *d_data = res.data() + ch_depth *k;
-          for (int m = 0; m < i_rows - k_rows + 1; m += stride)
+          for (int m = 0; m < i_rows - k_rows + 1; m += stride_vert)
           {
               const T *src_col = src_row;
-              for (int n = 0; n < i_cols - k_cols + 1; n += stride)
+              for (int n = 0; n < i_cols - k_cols + 1; n += stride_hor)
               {
                   const T *src = src_col;
                   T* d_ptr = d_data;
@@ -375,37 +432,41 @@ namespace linal
                       src += i_rows;
                   }
                   d_data += depth;
-                  src_col += stride;
+                  src_col += stride_hor;
               }
-              src_row += i_rows * stride;
+              src_row += i_rows * stride_vert;
           }
       }
       return res;
   }
   
   template<typename T>
-  thensor<T, 3> experimental::conv2d(const thensor<T, 3> &src,
+  thensor<T, 3> conv2d(const thensor<T, 3> &src,
                                      const thensor<T, 4> &kernel,
-                                     int stride,
-                                     int padding,
+                                     std::tuple<int,int> stride, // rows, cols
+	                                 std::tuple<int, int> padding, // rows, cols (vertical, horizontal)
                                      T padding_val)
   {
-      assert(padding >= 0);
-      assert(stride > 0);
+	  int pad_rows = std::get<0>(padding);
+	  int pad_cols = std::get<1>(padding);
+	  int stride_vert = std::get<0>(stride);
+	  int stride_hor = std::get<1>(stride);
+      assert(pad_rows >= 0 && pad_cols >= 0);
+      assert(stride_vert > 0 && stride_hor > 0);
       thensor<T, 3> mat;
-      if (padding != 0)
-          mat = experimental::padd_image(src, padding, padding_val);
+	  if (pad_rows != 0 && pad_cols != 0)
+          mat = padd_image(src, pad_rows, pad_cols, padding_val); 
       else
           mat = src;
       const int  d_channels = kernel.shape()[1], k_rows = kernel.shape()[2], k_cols = kernel.shape()[3];
       const int s_rows = mat.shape()[1], s_cols = mat.shape()[2];
      
-      thensor<T, 2> filter = experimental::unroll_kernel(kernel);
-      thensor<T, 2> img = experimental::unroll_image(mat, kernel.shape(), stride);
+      thensor<T, 2> filter = unroll_kernel(kernel);
+      thensor<T, 2> img = unroll_image(mat, kernel.shape(), stride_vert, stride_hor);
       
       
-      return reshape<T,2,3>(transpose(matmul(img, filter)),
-          {d_channels,(s_rows - k_rows + stride) / stride, (s_cols - k_cols + stride) / stride});
+      return reshape<T,2,3>(transpose(matmul(img, filter)), 
+          {d_channels,(s_rows - k_rows + stride_vert) / stride_vert, (s_cols - k_cols + stride_hor) / stride_hor });
   }
   
   

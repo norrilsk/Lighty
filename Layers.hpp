@@ -32,6 +32,18 @@ public:
     void set_mode(TrainigMode mode){training = mode;}
     virtual void set_optimizer(optim::optimizer_t type, float lr) {};
 };
+
+template <typename T, typename S>
+class Conv2D final : public Layers
+{
+public:
+	const linal::Container& forward(const linal::Container &src) override {};
+	const linal::Container& backward(const linal::Container &delta) override {};
+	Conv2D(int inputChannels, std::tuple<int,int> kernelSize, int outputSize) { throw std::logic_error{ "Invalid template type. Use float instead." }; };
+	~Conv2D() final = default;
+};
+
+
 template <typename T, typename S>
 class Dense1D final : public Layers
 {
@@ -41,6 +53,7 @@ public:
     Dense1D(int inputSize, int outputSize) { throw std::logic_error{"Invalid template type. Use float instead."};};
     ~Dense1D() final  = default;
 };
+
 template <>
 class Dense1D<float, float> final : public Layers
 {
