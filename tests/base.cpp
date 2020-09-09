@@ -759,20 +759,20 @@ namespace test
   {
 	  std::cout << "CONVOLUTION TEST 3\t";
 	  linal::thensor<int, 3> mat({ 3,3,3});
-	  mat[0][0][0] = 1;   mat[0][0][1] = 2;   mat[0][0][2] = 0;
-	  mat[0][1][0] = 1;   mat[0][1][1] = 1;   mat[0][1][2] = 3;
-	  mat[0][2][0] = 0;   mat[0][2][1] = 2;   mat[0][2][2] = 2;
+	  mat[0][0][0] = 1;   mat[0][1][0] = 2;   mat[0][2][0] = 0;
+	  mat[1][0][0] = 1;   mat[1][1][0] = 1;   mat[1][2][0] = 3;
+	  mat[2][0][0] = 0;   mat[2][1][0] = 2;   mat[2][2][0] = 2;
 	
-	  mat[1][0][0] = 0;   mat[1][0][1] = 2;   mat[1][0][2] = 1;
-	  mat[1][1][0] = 0;   mat[1][1][1] = 3;   mat[1][1][2] = 2;
-	  mat[1][2][0] = 1;   mat[1][2][1] = 1;   mat[1][2][2] = 0;
+	  mat[0][0][1] = 0;   mat[0][1][1] = 2;   mat[0][2][1] = 1;
+	  mat[1][0][1] = 0;   mat[1][1][1] = 3;   mat[1][2][1] = 2;
+	  mat[2][0][1] = 1;   mat[2][1][1] = 1;   mat[2][2][1] = 0;
 	
-	  mat[2][0][0] = 1;   mat[2][0][1] = 2;   mat[2][0][2] = 1;
-	  mat[2][1][0] = 0;   mat[2][1][1] = 1;   mat[2][1][2] = 3;
-	  mat[2][2][0] = 3;   mat[2][2][1] = 3;   mat[2][2][2] = 2;
+	  mat[0][0][2] = 1;   mat[0][1][2] = 2;   mat[0][2][2] = 1;
+	  mat[1][0][2] = 0;   mat[1][1][2] = 1;   mat[1][2][2] = 3;
+	  mat[2][0][2] = 3;   mat[2][1][2] = 3;   mat[2][2][2] = 2;
 	  
 	  
-	  //input channels, output_channels, rows , cols 
+	  //input channels,  rows , cols output_channels,
 	  linal::thensor<int, 4> kernel({ 3, 2, 2, 2 });
 	  
 	  kernel[0][0][0][0] = 1;   kernel[0][0][0][1] = 1;
@@ -797,11 +797,11 @@ namespace test
 	  
 	  linal::thensor<int, 3> checker({ 2, 2, 2});
 	  
-	  checker[0][0][0] = 14;   checker[0][0][1] = 20;
-	  checker[0][1][0] = 15;   checker[0][1][1] = 24;
-	
-	  checker[1][0][0] = 12;   checker[1][0][1] = 24;
-	  checker[1][1][0] = 17;   checker[1][1][1] = 26;
+	  checker[0][0][0] = 14;   checker[0][1][0] = 20;
+	  checker[1][0][0] = 15;   checker[1][1][0] = 24;
+
+	  checker[0][0][1] = 12;   checker[0][1][1] = 24;
+	  checker[1][0][1] = 17;   checker[1][1][1] = 26;
 	  bool check = false;
 	  linal::thensor<int, 3> res = linal::conv2d(mat, kernel);
 	  check = res == checker;
@@ -867,7 +867,7 @@ namespace test
     	auto p1 = std::chrono::high_resolution_clock::now();
     	res1 = linal::conv2d(src,kernel,2,3,4);
     	auto p2 = std::chrono::high_resolution_clock::now();
-    	bool check = checker == res1;
+		bool check = checker == res1;
     	
     	if (verbose)
 		{
@@ -897,7 +897,7 @@ namespace test
   bool linal_conv2d_2_experimental(bool verbose)
   {
 	  std::cout << "CONVOLUTION EXPERIMENTAL TEST 2\t";
-      linal::thensor<int,3> src({10,128,128});
+      linal::thensor<int,3> src({128,128,10});
       linal::thensor<int,4> kernel({10,20,3,3});
       linal::thensor<int,3> res1, checker;
       
@@ -910,7 +910,7 @@ namespace test
       auto p1 = std::chrono::high_resolution_clock::now();
       res1 = linal::conv2d(src,kernel,2,3,4);
       auto p2 = std::chrono::high_resolution_clock::now();
-      bool check = checker == res1;
+	  bool check = checker == res1;
       
       if (verbose)
       {
@@ -920,13 +920,6 @@ namespace test
           std::cout << "experimental time : "
                     << std::chrono::duration_cast<std::chrono::nanoseconds>(p2 - p1).count() * 1e-6
                     << " ms\n";
-	
-//		  std::cout << "\n\nkernel:\n"<<kernel;
-//		  std::cout << "\n\nunrolled kernel:\n"<<linal::experimental::unroll_kernel(kernel);
-//          std::cout << "\n\nsrc:\n" <<src;
-//		  std::cout << "\n\nunrolled src:\n" <<linal::experimental::unroll_image(src,kernel.shape(),1);
-//          std::cout << "\n\nres:\n" << res1;
-//          std::cout << "\n\ncontrol:\n " <<checker;
       }
       if (check)
       {

@@ -10,8 +10,13 @@
 #include "linal/algebra.hpp"
 #include "Optimizers.hpp"
 #include <chrono>
+#include <tuple>
 typedef linal::thensor<float,1> fvec;
 typedef linal::thensor<float,2> fmat;
+typedef linal::thensor<float, 1> fthensor1;
+typedef linal::thensor<float, 2> fthensor2;
+typedef linal::thensor<float, 3> fthensor3;
+typedef linal::thensor<float, 4> fthensor4;
 
 enum TrainigMode
 {
@@ -39,9 +44,147 @@ class Conv2D final : public Layers
 public:
 	const linal::Container& forward(const linal::Container &src) override {};
 	const linal::Container& backward(const linal::Container &delta) override {};
-	Conv2D(int inputChannels, std::tuple<int,int> kernelSize, int outputSize) { throw std::logic_error{ "Invalid template type. Use float instead." }; };
+	Conv2D(int inputChannels, std::tuple<int, int> kernelSize, int outputSize, std::tuple<int, int> stride = { 1,1 },
+		std::tuple<int, int> padding = { 0,0 }) { throw std::logic_error{ "Invalid template type. Use float instead." }; };
 	~Conv2D() final = default;
 };
+
+template <>
+class Conv2D<float, float> final : public Layers
+{
+	//const fmat* _input_batch = nullptr; 
+	linal::thensor<float,4> _output_batch;
+	//fmat _delta_batch; // need for backprop
+	int _inputChannels = 0;
+	int _outputChannels = 0;
+	int _depth;
+	fmat _weights;
+	fvec _bias;
+	
+	std::tuple<int, int> _stride;
+	std::tuple<int, int> _padding;
+	std::tuple<int, int> _kernelSize;
+
+	std::unique_ptr<optim::Optimizer> _weights_optimizer = nullptr;
+	std::unique_ptr<optim::Optimizer> _bias_optimizer = nullptr;
+public:
+	const linal::Container& forward(const linal::Container &src) final;
+	const linal::Container& backward(const linal::Container &delta) final;
+	fmat weights() { return _weights; }
+	fvec bias() { return _bias; }
+	//sometimes we need to change optimizers on fly
+	//set optimizers to nullptr to freeze layer
+	void set_optimizers(std::unique_ptr<optim::Optimizer> weights_optimizer,
+		std::unique_ptr<optim::Optimizer>  bias_optimizer)
+	{
+		_weights_optimizer = std::move(weights_optimizer);
+		_bias_optimizer = std::move(bias_optimizer);
+	};
+	void set_optimizer(optim::optimizer_t type, float lr) final;
+	Conv2D(int inputChannels, std::tuple<int, int> kernelSize, int outputChannels,
+		std::tuple<int, int> stride = { 1,1 }, std::tuple<int, int> padding = { 0,0 },
+		std::unique_ptr<optim::Optimizer> weights_optimizer = std::make_unique<optim::SGD<fmat>>(),
+		std::unique_ptr<optim::Optimizer>  bias_optimizer = std::make_unique<optim::SGD<fvec>>());
+	~Conv2D() final = default;
+};
+
+
+Conv2D<float, float> ::Conv2D(int inputChannels, std::tuple<int, int> kernelSize, int outputChannels,
+	std::tuple<int, int> stride , std::tuple<int, int> padding,
+	std::unique_ptr<optim::Optimizer> weights_optimizer,
+	std::unique_ptr<optim::Optimizer>  bias_optimizer ) :
+	_inputChannels(inputChannels), _kernelSize(kernelSize), _outputChannels(outputChannels),
+	_stride(stride), _padding(padding),
+	_weights_optimizer(std::move(weights_optimizer)),
+	_bias_optimizer(std::move(bias_optimizer)),
+	_depth(inputChannels * std::get<0>(kernelSize) * std::get<1>(kernelSize)),
+	_weights({ _depth ,outputChannels }),
+	_bias(outputChannels)
+{
+	// TODO: think about correct initialization (may be some articles)
+
+	static std::default_random_engine generator(static_cast<unsigned>(time(nullptr)) + 42);
+	std::normal_distribution<float> distribution{ 0.0f,0.01f };
+	std::normal_distribution<float> distribution_b{ 0.005f,0.005f };
+	for (int i = 0; i <outputChannels; i++)
+	{
+		_bias[i] = distribution_b(generator);
+	}
+	for (int i = 0; i < _depth; i++)
+	{
+		fvec &&row = _weights[i];
+		for (int j = 0; j < outputChannels; j++)
+		{
+			row[j] = distribution(generator);
+		}
+	}
+}
+void Conv2D<float, float>::set_optimizer(optim::optimizer_t type, float lr)
+{
+	_weights_optimizer = std::move(optim::get_optimizer<fmat>(type, lr));
+	_bias_optimizer = std::move(optim::get_optimizer<fvec>(type, lr));
+}
+
+
+const linal::Container& Conv2D<float, float>::forward(const linal::Container &src)
+{
+	const fthensor3* input_batch_tmp = dynamic_cast<const fthensor3 *>(&src);
+	std::vector<int> kernel_shape = { _inputChannels, _outputChannels, std::get<0>(_kernelSize),
+		std::get<1>(_kernelSize) };
+	fmat unrolled_image = linal::unroll_image(*input_batch_tmp, kernel_shape, std::get<0>(_stride), std::get<1>(_stride));
+	//TODO :: NO UNROLL FOR BATCH , DO IT 
+	
+
+	// ---------------------Calb line-----------------------------------------
+	/*_input_batch = input_batch_tmp;
+	_output_batch = output_batch_tmp;
+	return dynamic_cast<const linal::Container&>(_output_batch); */
+	assert(0);
+	return *input_batch_tmp;
+}
+const linal::Container& Conv2D<float, float>::backward(const linal::Container &delta)
+{
+	/*const fmat& deltaLower = dynamic_cast<const fmat&>(delta);
+	int batch_size = deltaLower.shape()[0];
+	assert(batch_size == _input_batch->shape()[0]);
+	fmat deltaUpper = linal::matmul(deltaLower, linal::transpose(_weights));
+
+
+	double r_batch = 1. / batch_size;
+
+	fvec grad_bias;
+	fmat grad_weights;
+	if (_bias_optimizer)
+	{
+		grad_bias = fvec(_bias.size());
+		linal::zero_set(grad_bias);
+		// computing average gradient on batch
+		for (int i = 0; i < batch_size; i++)
+		{
+			grad_bias += deltaLower[i];
+		}
+		grad_bias = -r_batch *grad_bias;
+
+	}
+	if (_weights_optimizer)
+	{
+		grad_weights = fmat(_weights.shape());
+		linal::zero_set(grad_weights);
+		// computing average gradient on batch
+		grad_weights -= linal::matmul(linal::transpose(*_input_batch), deltaLower);
+	}
+
+	// ---------------------Calb line-----------------------------------------
+	//there has to be but...
+	if (_bias_optimizer)
+		(*_bias_optimizer)(_bias, grad_bias);
+	if (_weights_optimizer)
+		(*_weights_optimizer)(_weights, grad_weights);
+	_input_batch = nullptr;
+	_delta_batch = deltaUpper;
+	return dynamic_cast<const linal::Container&>(_delta_batch);*/assert(0);
+	return delta;
+}
 
 
 template <typename T, typename S>

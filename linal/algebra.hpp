@@ -110,24 +110,33 @@ namespace linal
   {
       assert(padding >= 0);
       assert(stride > 0);
-      assert(kernel.shape()[0] == src.shape()[0]);
+      assert(kernel.shape()[0] == src.shape()[2]);
       const int k_rows = kernel.shape()[2], k_cols = kernel.shape()[3];
-      const int d_rows = src.shape()[1] + 2 * padding, d_cols = src.shape()[2] + 2 * padding;
+      const int d_rows = src.shape()[0] + 2 * padding, d_cols = src.shape()[1] + 2 * padding;
       const int d_channels = kernel.shape()[1];
-      const int s_channels = src.shape()[0];
+      const int s_channels = src.shape()[2];
       thensor<T,3> dst({d_channels,( d_rows - k_rows + stride) / stride, (d_cols - k_cols + stride) / stride});
       zero_set(dst);
+	  thensor<T, 2> wrapper;
+	  thensor<T, 3> wrapper3;
+	  thensor<T, 3> src_copy = src.copy();
+	  /*we had channel first structure and then decide to make channel last, yes we are strange guys*/
+	  /*we convert here channel last to channel  first */
+	  /*we use this code just for verification*/
+
+	  thensor<T, 2> src_transposed = linal::transpose(wrapper.wrap(src_copy.data(), std::vector<int>{src.shape()[0] * src.shape()[1], s_channels}));
+	  wrapper3.wrap(src_transposed.data(), std::vector<int>{src.shape()[2], src.shape()[0], src.shape()[1]});
       for (int i = 0 ; i < s_channels; i++)
       {
-          thensor<T,2> single_channel = src[i];
+          thensor<T,2> single_channel = wrapper3[i];
           thensor<T,3> channel_kernels = kernel[i];
           for (int j = 0 ; j < d_channels; j++)
           {
               dst[j] += depricated::conv2d(single_channel,channel_kernels[j],stride,padding,padding_val);
           }
       }
-      
-      return dst;
+	  thensor<T, 2> dst_transposed = linal::transpose(wrapper.wrap(dst.data(), std::vector<int>{d_channels ,dst.shape()[1] * dst.shape()[2]}));
+	  return reshape<T, 2, 3>(dst_transposed, { dst.shape()[1], dst.shape()[2], dst.shape()[0] });
   }
   template<typename T>
   thensor<T, 2> depricated::conv2d(const thensor<T, 2> &src, const thensor<T, 2> &kernel, int stride, int padding, T padding_val)
@@ -325,57 +334,52 @@ namespace linal
       {
           return img.copy();
       }
-      const int channels = img.shape()[0];
-      const int src_rows = img.shape()[1];
-      const int src_cols = img.shape()[2];
+      const int channels = img.shape()[2];
+      const int src_rows = img.shape()[0];
+      const int src_cols = img.shape()[1];
       const int rows = src_rows + 2 * pad_rows;
       const int cols = src_cols + 2 * pad_cols;
-      
-      thensor<T, 3> res({channels, rows, cols});
+	  const int row_stride = cols * channels;
+	  const int indent = pad_cols * channels;
+
+      thensor<T, 3> res({rows, cols, channels });
       const int s_ch_size = src_rows * src_cols;
       const int d_ch_size = rows * cols;
-      for (int k = 0; k < channels; k++)
+   
+	  T *res_d = res.data();
+	  const T *src_d = img.data();
+	  
+	  if (pad_rows > 0)
+	  {
+		  for (int j = 0; j < row_stride; j++)
+		  {
+			  res_d[j] = padding_val;
+		  }
+
+		  for (int i = 1; i < pad_rows; i++)
+		  {
+			  std::copy(res_d, res_d + row_stride, res_d + i * row_stride);
+		  }
+		  std::copy(res_d, res_d + row_stride * pad_rows, res_d + (rows - pad_rows) * row_stride);
+	  }
+	  if (pad_cols > 0)
+	  {
+		  for (int j = 0; j < indent; j++)
+		  {
+			  res_d[j + row_stride * pad_rows] = padding_val;
+		  }
+	  }
+	 
+      
+      for (int i = pad_rows; i < rows - pad_rows; i++)
       {
-          T *res_d = res.data() + d_ch_size * k;
-          const T *src_d = img.data() + s_ch_size * k;
-          if (0 == k)
-          {
-			  if (pad_rows > 0)
-			  {
-				  for (int j = 0; j < cols; j++)
-				  {
-					  res_d[j] = padding_val;
-				  }
-
-				  for (int i = 1; i < pad_rows; i++)
-				  {
-					  std::copy(res_d, res_d + cols, res_d + i * cols);
-				  }
-				  std::copy(res_d, res_d + cols * pad_rows, res_d + (rows - pad_rows) * cols);
-			  }
-			  if (pad_cols > 0)
-			  {
-				  for (int j = 0; j < pad_cols; j++)
-				  {
-					  res_d[j + cols * pad_rows] = padding_val;
-				  }
-			  }
-          }
-          else
-          {
-              std::copy(res.data(), res.data() + cols * pad_rows, res_d);
-              std::copy(res_d, res_d + cols * pad_rows, res_d + (rows - pad_rows) * cols);
-          }
-
-          for (int i = pad_rows; i < rows - pad_rows; i++)
-          {
-              std::copy(res.data(), res.data() + pad_cols, res_d + i * cols);
-              std::copy(src_d + (i - pad_rows) * src_cols,
-                        src_d + (i - pad_rows + 1) * src_cols,
-                        res_d + i * cols + pad_cols);
-              std::copy(res_d, res_d + pad_cols, res_d + (i + 1) * cols - pad_cols);
-          }
+          std::copy(res.data(), res.data() + indent, res_d + i * row_stride);
+          std::copy(src_d + (i - pad_rows) * src_cols * channels,
+                  src_d + (i - pad_rows + 1) * src_cols * channels,
+                  res_d + i * row_stride + indent);
+          std::copy(res_d, res_d + indent, res_d + (i + 1) * row_stride - indent);
       }
+        
       return res;
   }
   
@@ -383,27 +387,35 @@ namespace linal
   thensor<T,2> unroll_kernel(const thensor<T,4> &kernel)
   {
       const int channels = kernel.shape()[0], filters = kernel.shape()[1];
-      const int k_size = kernel.shape()[2]* kernel.shape()[3];
-      thensor<T, 2> resT({filters, channels*k_size});
-      T* d_data = resT.data();
+	  const int k_rows = kernel.shape()[2];
+	  const int k_cols = kernel.shape()[3];
+      thensor<T, 2> res({ channels * k_rows * k_cols, filters});
+      T* d_data = res.data();
       const T* k_data = kernel.data();
-      for(int i = 0; i < filters; ++i)
-      {
-          for(int j = 0; j < channels; ++j)
-          {
-              const T* src = k_data + (j*filters + i)* k_size;
-              std::copy(src, src + k_size, d_data);
-              d_data += k_size;
-          }
-      }
-      return transpose(resT);
+	  //it is really cache unfriendly but we suppose that this is rare-called function 
+	  // we made it slow in order to make fast hot code
+	  for (int m = 0; m < k_rows; m++)
+	  {
+		  for (int n = 0; n < k_cols; n++)
+		  {
+			  for (int i = 0; i < channels; i++)
+			  {
+				  for (int j = 0; j < filters; j++)
+				  {
+					  *(d_data++) = k_data[n + k_cols * ( m + k_rows * ( j + i * filters) )];
+				  }
+			  }
+		  }
+	  }
+	  return res;
   }
 
   template<typename T>
   thensor<T,2> unroll_image(const thensor<T,3> &img,const std::vector<int>& kernel_shape, int stride_vert, int stride_hor){
-      const int i_rows = img.shape()[1], i_cols = img.shape()[2];
+      const int i_rows = img.shape()[0], i_cols = img.shape()[1];
+	  const int channels = img.shape()[2];
       assert(4 == kernel_shape.size());
-      assert(img.shape()[0] == kernel_shape[0]);
+      assert(img.shape()[2] == kernel_shape[0]);
       const int depth = kernel_shape[0] * kernel_shape[2] * kernel_shape[3];
       const int k_rows = kernel_shape[2], k_cols = kernel_shape[3];
       const int ch_depth = k_rows * k_cols;
@@ -413,30 +425,26 @@ namespace linal
       
       thensor<T, 2> res({rows, depth});
       
-      for (int k = 0; k < kernel_shape[0]; k++)
-      {
-          
-          const T *src_row = img.data() + ch_size * k;
-          T *d_data = res.data() + ch_depth *k;
-          for (int m = 0; m < i_rows - k_rows + 1; m += stride_vert)
-          {
-              const T *src_col = src_row;
-              for (int n = 0; n < i_cols - k_cols + 1; n += stride_hor)
-              {
-                  const T *src = src_col;
-                  T* d_ptr = d_data;
-                  for (int i = 0; i < k_rows; i++)
-                  {
-                      std::copy(src, src + k_cols, d_ptr);
-                      d_ptr += k_cols;
-                      src += i_rows;
-                  }
-                  d_data += depth;
-                  src_col += stride_hor;
-              }
-              src_row += i_rows * stride_vert;
-          }
-      }
+  
+      const T *src_row = img.data() ;
+      T *d_ptr = res.data();
+	  for (int m = 0; m < i_rows - k_rows + 1; m += stride_vert)
+	  {
+		  const T *src_col = src_row;
+		  for (int n = 0; n < i_cols - k_cols + 1; n += stride_hor)
+		  {
+			  const T *src = src_col ;
+			  for (int i = 0; i < k_rows; i++)
+			  {
+				  std::copy(src, src + k_cols * channels, d_ptr);
+				  d_ptr += k_cols * channels;
+				  src += i_cols * channels;
+			  }
+			  src_col += stride_hor * channels;
+		  }
+		  src_row += i_rows * stride_vert * channels;
+	  }
+
       return res;
   }
   
@@ -455,17 +463,16 @@ namespace linal
       assert(stride_vert > 0 && stride_hor > 0);
       thensor<T, 3> mat;
 	  if (pad_rows != 0 && pad_cols != 0)
-          mat = padd_image(src, pad_rows, pad_cols, padding_val); 
+          mat = padd_image(src, pad_rows, pad_cols, padding_val);  
       else
           mat = src;
       const int  d_channels = kernel.shape()[1], k_rows = kernel.shape()[2], k_cols = kernel.shape()[3];
-      const int s_rows = mat.shape()[1], s_cols = mat.shape()[2];
+      const int s_rows = mat.shape()[0], s_cols = mat.shape()[1];
      
       thensor<T, 2> filter = unroll_kernel(kernel);
       thensor<T, 2> img = unroll_image(mat, kernel.shape(), stride_vert, stride_hor);
       
-      
-      return reshape<T,2,3>(transpose(matmul(img, filter)), 
+      return reshape<T,2,3>( matmul(img, filter), 
           {d_channels,(s_rows - k_rows + stride_vert) / stride_vert, (s_cols - k_cols + stride_hor) / stride_hor });
   }
   

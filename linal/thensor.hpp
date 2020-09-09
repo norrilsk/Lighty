@@ -110,7 +110,9 @@ namespace linal
       
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
-      void wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes); };
+	  thensor<T, _dim>& wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes); return *this; };
+
+	  thensor<T, _dim>& reshape(const std::vector<int> &new_shape) { _data.reshape(new_shape); return *this; };
       
       thensor<T, _dim> copy() const
       {
@@ -182,7 +184,7 @@ namespace linal
       
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
-      void wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes); };
+	  thensor<T, 1>& wrap(T *data, const std::vector<int> &shapes) { _data.construct(data, shapes);  return *this; };
       
       thensor<T, 1> copy()
       {

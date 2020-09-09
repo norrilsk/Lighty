@@ -28,6 +28,7 @@ namespace linal
       //this method initialized data from external source
       //it means that data will not be allocated or free-ed inside
       void construct(T *data,const std::vector<int> &shapes);
+	  ThensorData<T, dim> &reshape(const std::vector<int> &new_shape);
       ThensorData() = default;
       explicit ThensorData(const std::vector<int> &shapes);
       ThensorData(const ThensorData<T, dim> &thensor_data);
@@ -183,6 +184,18 @@ namespace linal
       _data = data;
       _shapes = shapes;
       _size = size;
+  }
+  template<typename T, int dim>
+  ThensorData<T, dim> &ThensorData<T, dim>::reshape(const std::vector<int> &new_shape)
+  {
+	  size_t new_size = 1;
+	  for (auto& sh : new_shape)
+	  {
+		  new_size *= sh;
+	  }
+	  assert(new_size == this->size());
+	  _shapes = new_shape;
+	  return *this;
   }
   template<typename T, int dim>
   ThensorData<T, dim> & ThensorData<T, dim>::copy(const ThensorData<T, dim> &thensor_data)
