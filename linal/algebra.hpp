@@ -5,8 +5,11 @@
 #ifndef LIGHTY_ALGEBRA_HPP
 #define LIGHTY_ALGEBRA_HPP
 #include"thensor.hpp"
+#include <tuple>
 namespace linal
 {
+
+  inline std::tuple<int, int, int> getConv2dOutputShape(const std::vector<int>& img_shape, const std::vector<int>& kernel_shape, std::tuple<int, int> stride, std::tuple<int, int> padding);
   namespace experimental
   {
   }
@@ -30,7 +33,9 @@ namespace linal
   template<typename T>
   thensor<T, 2> unroll_kernel(const thensor<T, 4> &kernel);
   template<typename T>
-  thensor<T, 2> unroll_image(const thensor<T, 3> &img, const std::vector<int> &new_shape, int stride_vert, int stride_hor);
+  thensor<T, 2> unroll_image(const thensor<T, 3> &img, const std::vector<int> &kernel_shape, int stride_vert, int stride_hor);
+  template<typename T>
+  thensor<T, 3> bacward_unroll_image(const thensor<T, 2> &unrolled_img, const std::vector<int> &kernel_shape, const std::vector<int>& input_shape, int stride_vert, int stride_hor, int pad_rows,int pad_cols);
   template<typename T>
   thensor<T, 3> padd_image(const thensor<T, 3> &img, int pad_rows, int pad_cols, T padding_val = T());
   template<typename T>
@@ -422,15 +427,16 @@ namespace linal
       const int ch_size = i_rows * i_cols;
       const int r = ( i_rows - k_rows + stride_vert) / stride_vert, c = (i_cols - k_cols + stride_hor) / stride_hor;
       const int rows = r * c;
-      
+	  if (!((stride_vert * r) == (i_rows - k_rows + stride_vert)) || !((stride_hor * c) == (i_cols - k_cols + stride_hor)))
+		  std::cout << "Warning : image size is not multiple of stride" << std::endl;
       thensor<T, 2> res({rows, depth});
       
   
-      const T *src_row = img.data() ;
+      const T *src_data = img.data() ;
       T *d_ptr = res.data();
 	  for (int m = 0; m < i_rows - k_rows + 1; m += stride_vert)
 	  {
-		  const T *src_col = src_row;
+		  const T *src_col = src_data + m * i_cols * channels;
 		  for (int n = 0; n < i_cols - k_cols + 1; n += stride_hor)
 		  {
 			  const T *src = src_col ;
@@ -442,10 +448,64 @@ namespace linal
 			  }
 			  src_col += stride_hor * channels;
 		  }
-		  src_row += i_rows * stride_vert * channels;
 	  }
 
       return res;
+  }
+
+  template<typename T>
+  thensor<T, 3> bacward_unroll_image(const thensor<T, 2>& unrolled_img, const std::vector<int>& kernel_shape,
+	  const std::vector<int>& input_shape, int stride_vert, int stride_hor, int pad_rows, int pad_cols)
+  {
+
+
+	  const int channels = kernel_shape[0];
+	  assert(4 == kernel_shape.size());
+	  const int depth = kernel_shape[0] * kernel_shape[2] * kernel_shape[3];
+	  const int k_rows = kernel_shape[2], k_cols = kernel_shape[3];
+	  const int ch_depth = k_rows * k_cols;
+	  const int i_rows = input_shape[0], i_cols = input_shape[1];
+	  const int ch_size = i_rows * i_cols;
+	  const int r = (i_rows - k_rows + stride_vert) / stride_vert, c = (i_cols - k_cols + stride_hor) / stride_hor;
+	  if  ( !((stride_vert * r) == (i_rows - k_rows + stride_vert))  ||  !((stride_hor * c) == (i_cols - k_cols + stride_hor)))
+		  std::cout << "Warning : image size is not multiple of stride" << std::endl;
+	  const int rows = r * c;
+	  assert(rows == unrolled_img.shape()[0]);
+	  assert(depth == unrolled_img.shape()[1]);
+
+
+
+	  
+	   thensor<T, 3> res = linal::zero_thensor<T,3>(std::vector<int>({i_rows - 2 * pad_rows, i_cols - 2 *pad_cols,channels}));
+	   T* r_data = res.data();
+	   const T* uim_data = unrolled_img.data();
+	   const int line_stride = channels * i_cols;
+	   for (int m = 0; m < r; m++)
+	   {
+		   for (int n = 0; n < c; n++)
+		   {
+			   for (int j = 0; j < k_rows; j++)
+			   {
+				   int input_row = j + m * stride_vert - pad_rows;
+				   if (input_row < 0 || input_row > res.shape()[0])
+					   continue;
+				   for (int k = 0; k < k_cols; k++)
+				   {
+					   int input_col = k + n * stride_hor - pad_cols;
+					   if (input_col < 0 || input_col > res.shape()[1])
+						   continue;
+					   for (int c = 0; c < channels; c++, uim_data++)
+					   {
+						   *(r_data + c + channels * input_col + line_stride * input_row )=
+							   *uim_data;
+					   }
+				   }
+
+			   }
+		   }
+	   }
+    
+	   return res;
   }
   
   template<typename T>
@@ -473,8 +533,23 @@ namespace linal
       thensor<T, 2> img = unroll_image(mat, kernel.shape(), stride_vert, stride_hor);
       
       return reshape<T,2,3>( matmul(img, filter), 
-          {d_channels,(s_rows - k_rows + stride_vert) / stride_vert, (s_cols - k_cols + stride_hor) / stride_hor });
+	  { (s_rows - k_rows + stride_vert) / stride_vert, (s_cols - k_cols + stride_hor) / stride_hor , d_channels } );
   }
+
+  std::tuple<int, int, int> linal::getConv2dOutputShape(const std::vector<int>& img_shape, const std::vector<int>& kernel_shape, std::tuple<int, int> stride, std::tuple<int, int> padding)
+  {
+	  int pad_rows = std::get<0>(padding);
+	  int pad_cols = std::get<1>(padding);
+	  int stride_vert = std::get<0>(stride);
+	  int stride_hor = std::get<1>(stride);
+	  assert(pad_rows >= 0 && pad_cols >= 0);
+	  assert(stride_vert > 0 && stride_hor > 0);
+	  const int  d_channels = kernel_shape[1], k_rows = kernel_shape[2], k_cols = kernel_shape[3];
+	  const int s_rows = img_shape[0] + 2 * pad_rows;
+	  const int s_cols = img_shape[1] + 2 * pad_cols;
+	  return { (s_rows - k_rows + stride_vert) / stride_vert, (s_cols - k_cols + stride_hor) / stride_hor , d_channels };
+  }
+
   
   
 }

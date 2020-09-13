@@ -18,6 +18,13 @@ typedef linal::thensor<float, 2> fthensor2;
 typedef linal::thensor<float, 3> fthensor3;
 typedef linal::thensor<float, 4> fthensor4;
 
+typedef linal::thensor<int, 1> ivec;
+typedef linal::thensor<int, 2> imat;
+typedef linal::thensor<int, 1> ithensor1;
+typedef linal::thensor<int, 2> ithensor2;
+typedef linal::thensor<int, 3> ithensor3;
+typedef linal::thensor<int, 4> ithensor4;
+
 enum TrainigMode
 {
     Production = 0,
@@ -54,13 +61,14 @@ class Conv2D<float, float> final : public Layers
 {
 	//const fmat* _input_batch = nullptr; 
 	linal::thensor<float,4> _output_batch;
-	//fmat _delta_batch; // need for backprop
+	fmat _unrolled_batch; // need for backprop
+	fthensor4 _delta_batch;
 	int _inputChannels = 0;
 	int _outputChannels = 0;
 	int _depth;
 	fmat _weights;
 	fvec _bias;
-	
+	std::vector<int> _input_shape;
 	std::tuple<int, int> _stride;
 	std::tuple<int, int> _padding;
 	std::tuple<int, int> _kernelSize;
@@ -70,7 +78,7 @@ class Conv2D<float, float> final : public Layers
 public:
 	const linal::Container& forward(const linal::Container &src) final;
 	const linal::Container& backward(const linal::Container &delta) final;
-	fmat weights() { return _weights; }
+	const fmat& weights() { return _weights; }
 	fvec bias() { return _bias; }
 	//sometimes we need to change optimizers on fly
 	//set optimizers to nullptr to freeze layer
@@ -128,30 +136,52 @@ void Conv2D<float, float>::set_optimizer(optim::optimizer_t type, float lr)
 
 const linal::Container& Conv2D<float, float>::forward(const linal::Container &src)
 {
-	const fthensor3* input_batch_tmp = dynamic_cast<const fthensor3 *>(&src);
+	const fthensor4* input_batch_tmp = dynamic_cast<const fthensor4 *>(&src);
 	std::vector<int> kernel_shape = { _inputChannels, _outputChannels, std::get<0>(_kernelSize),
 		std::get<1>(_kernelSize) };
-	fmat unrolled_image = linal::unroll_image(*input_batch_tmp, kernel_shape, std::get<0>(_stride), std::get<1>(_stride));
-	//TODO :: NO UNROLL FOR BATCH , DO IT 
-	
+	const int batch_size = input_batch_tmp->shape()[0];
+	const int height = input_batch_tmp->shape()[1];
+	const int width = input_batch_tmp->shape()[2];
+	const int channels = input_batch_tmp->shape()[3];
+	std::tuple<int, int, int> output_shape = linal::getConv2dOutputShape({ height, width,channels }, kernel_shape, _stride, _padding);
+	const int output_channels = std::get<2>(output_shape);
+	const int output_height = std::get<0>(output_shape);
+	const int output_width = std::get<1>(output_shape);
+	const int unrolled_image_width = channels * kernel_shape[2] * kernel_shape[3];
+	const int unrolled_image_height = output_width * output_height;
 
+	fthensor3 padded_image;
+	fthensor3 unrolled_image({batch_size, unrolled_image_height ,unrolled_image_width });
+	for (int i = 0; i < batch_size; i++)
+	{
+		padded_image = linal::padd_image((*input_batch_tmp)[i], std::get<0>(_padding), std::get<1>(_padding), 0.f);
+		unrolled_image[i] = linal::unroll_image(padded_image, kernel_shape, std::get<0>(_stride), std::get<1>(_stride));
+
+	}
+	fmat unrolled_batch_tmp = linal::reshape<float, 3, 2>(unrolled_image, {unrolled_image_height * batch_size, unrolled_image_width});
+	fmat result = linal::matmul(unrolled_batch_tmp, _weights);
+	for (int i = 0; i < result.shape()[0]; i++)
+	{
+		result[i] += _bias;
+	}
+	fthensor4 output_batch = linal::reshape<float, 2, 4>(result, { batch_size, output_height, output_width, output_channels });
 	// ---------------------Calb line-----------------------------------------
-	/*_input_batch = input_batch_tmp;
-	_output_batch = output_batch_tmp;
-	return dynamic_cast<const linal::Container&>(_output_batch); */
-	assert(0);
-	return *input_batch_tmp;
+	 _unrolled_batch = unrolled_batch_tmp;
+	 _input_shape = input_batch_tmp->shape();
+	 return output_batch;
+
 }
 const linal::Container& Conv2D<float, float>::backward(const linal::Container &delta)
 {
-	/*const fmat& deltaLower = dynamic_cast<const fmat&>(delta);
-	int batch_size = deltaLower.shape()[0];
-	assert(batch_size == _input_batch->shape()[0]);
-	fmat deltaUpper = linal::matmul(deltaLower, linal::transpose(_weights));
-
-
-	double r_batch = 1. / batch_size;
-
+	const fthensor4& deltaLower = dynamic_cast<const fthensor4&>(delta);
+	const int batch_size = deltaLower.shape()[0];
+	assert(batch_size == _input_shape[0]);
+	const int output_height = deltaLower.shape()[1];
+	const int output_width = deltaLower.shape()[2];
+	const int output_channels = deltaLower.shape()[3];
+	std::vector<int> kernel_shape = { _inputChannels, _outputChannels, std::get<0>(_kernelSize),
+		std::get<1>(_kernelSize) };
+	const fmat delta2d = linal::reshape<float, 4, 2>(deltaLower, { batch_size * output_height * output_width ,output_channels });
 	fvec grad_bias;
 	fmat grad_weights;
 	if (_bias_optimizer)
@@ -159,31 +189,38 @@ const linal::Container& Conv2D<float, float>::backward(const linal::Container &d
 		grad_bias = fvec(_bias.size());
 		linal::zero_set(grad_bias);
 		// computing average gradient on batch
-		for (int i = 0; i < batch_size; i++)
+		for (int i = 0; i <  batch_size * output_height * output_width; i++)
 		{
-			grad_bias += deltaLower[i];
+			grad_bias += delta2d[i];
 		}
-		grad_bias = -r_batch *grad_bias;
-
+		grad_bias = -grad_bias;
 	}
+
 	if (_weights_optimizer)
 	{
 		grad_weights = fmat(_weights.shape());
 		linal::zero_set(grad_weights);
 		// computing average gradient on batch
-		grad_weights -= linal::matmul(linal::transpose(*_input_batch), deltaLower);
+		grad_weights -= linal::matmul(linal::transpose(_unrolled_batch), delta2d);
 	}
-
+	fmat unrolled_delta = linal::matmul(linal::transpose(_weights), delta2d); // need formal prove
+	fthensor4 result(_input_shape);
+	std::vector<int> input_shape(_input_shape.begin() + 1, _input_shape.end());
+	for (int i = 0; i < batch_size; i++)
+	{
+		result[i] = linal::bacward_unroll_image(unrolled_delta, kernel_shape,
+			input_shape, std::get<0>(_stride), std::get<1>(_stride),
+			std::get<0>(_padding), std::get<1>(_padding));
+	}
 	// ---------------------Calb line-----------------------------------------
-	//there has to be but...
+	//there has to be but... optimizers..
 	if (_bias_optimizer)
 		(*_bias_optimizer)(_bias, grad_bias);
 	if (_weights_optimizer)
 		(*_weights_optimizer)(_weights, grad_weights);
-	_input_batch = nullptr;
-	_delta_batch = deltaUpper;
-	return dynamic_cast<const linal::Container&>(_delta_batch);*/assert(0);
-	return delta;
+	_delta_batch = result;
+
+	return dynamic_cast<const linal::Container&>(_delta_batch);
 }
 
 

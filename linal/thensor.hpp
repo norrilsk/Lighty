@@ -535,7 +535,7 @@ namespace linal
   inline thensor<T, 1> thensor<T, 1>::operator-()
   {
       thensor<T, 1> tmp(shape());
-      const T *lhs = tmp.data();
+      T *lhs = tmp.data();
       const T *rhs = _data.data();
       for (int i = 0; i < size(); i++)
       {

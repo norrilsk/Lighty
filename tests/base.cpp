@@ -931,6 +931,98 @@ namespace test
       }
 	  return check;
   }
+
+
+
+  bool linal_unroll_and_back(bool verbose)
+  {
+	  std::cout << "LINAL UNROLL AND BACK  TEST\t";
+	  bool check = false;
+	  for (int i = 0; i < 100; i++)
+	  {
+		  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
+		  std::uniform_int_distribution<int> dist(-1000, 1000);
+		  std::uniform_int_distribution<int> stride_dist(1, 5);
+		  std::uniform_int_distribution<int> channel_dist(1, 100);
+		  std::uniform_int_distribution<int> kernel_dist(1, 7);
+		  std::uniform_int_distribution<int> mult_dist(1, 21);
+		  int stride_v = stride_dist(gen);
+		  int stride_h = stride_dist(gen);
+		  int channels = channel_dist(gen);
+		  int filters = channel_dist(gen);
+		  int ker_x = kernel_dist(gen);
+		  int ker_y = kernel_dist(gen);
+		  int mul1 = mult_dist(gen);
+		  int mul2 = mult_dist(gen);
+		  std::vector<int> kernel_shape = { channels, filters, ker_x, ker_y };
+		  ithensor3 checker({ mul1 * stride_v + kernel_shape[2], mul2 * stride_h + kernel_shape[3] , kernel_shape[0] });
+
+		  
+
+		  fill<int, 3>(checker, [&] {return dist(gen); });
+
+		  check = (checker == linal::bacward_unroll_image(
+			  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
+			  kernel_shape, checker.shape(), stride_v, stride_h, 0, 0));
+		  if (!check)
+		  {
+			  if (verbose)
+			  {
+				  std::cout << "failed with params : \n";
+				  std::cout << "stride_v = " << stride_v << "\nstride_h = " << stride_h
+					  << "\nchannels = " << channels << "\nfilters = " << filters
+					  << "\nker_x = " << ker_x << "\nker_y = " << ker_y
+					  << "\nmul1 = " << mul1 << "\n mul2 = " << mul2 << std::endl;
+				  break;
+			  }
+		  }
+	  }
+	  if (check)
+	  {
+		  std::cout << "OK" << std::endl;
+	  }
+	  else
+	  {
+		  std::cout << "FAILED" << std::endl;
+	  }
+	  return check;
+  }
+
+  bool linal_unroll_test1(bool verbose )
+  {
+	  std::cout << "LINAL UNROLL TEST1 \t";
+	  int stride_v = 1;
+	  int stride_h = 1;
+	  std::vector<int> kernel_shape = { 2,2,2,1 };
+	  ithensor3 checker({ 1 * stride_v + kernel_shape[2], 1 * stride_h + kernel_shape[3] , kernel_shape[0] });
+
+	  bool check = false;
+	  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
+	  std::uniform_int_distribution<int> dist(0, 5);
+	  fill<int, 3>(checker, [&] {return dist(gen); });
+
+	  check = (checker == linal::bacward_unroll_image(
+		  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
+		  kernel_shape, checker.shape(), stride_v, stride_h, 0, 0));
+
+	  if (verbose)
+	  {
+		  std::cout << "checker:\n "<<checker << std::endl;
+		  std::cout << "unrolled:\n" << linal::unroll_image(checker, kernel_shape, stride_v, stride_h) << std::endl;
+		  std::cout << "res:\n" << linal::bacward_unroll_image(
+			  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
+			  kernel_shape, checker.shape(), stride_v, stride_h, 0, 0) << std::endl;
+	  }
+	  if (check)
+	  {
+		  std::cout << "OK" << std::endl;
+	  }
+	  else
+	  {
+		  std::cout << "FAILED" << std::endl;
+	  }
+	  return check;
+  }
 }
 
 
