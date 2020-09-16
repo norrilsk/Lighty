@@ -35,7 +35,7 @@ namespace linal
   template<typename T>
   thensor<T, 2> unroll_image(const thensor<T, 3> &img, const std::vector<int> &kernel_shape, int stride_vert, int stride_hor);
   template<typename T>
-  thensor<T, 3> bacward_unroll_image(const thensor<T, 2> &unrolled_img, const std::vector<int> &kernel_shape, const std::vector<int>& input_shape, int stride_vert, int stride_hor, int pad_rows,int pad_cols);
+  thensor<T, 3> backward_unroll_image(const thensor<T, 2> &unrolled_img, const std::vector<int> &kernel_shape, const std::vector<int>& input_shape, int stride_vert, int stride_hor, int pad_rows,int pad_cols);
   template<typename T>
   thensor<T, 3> padd_image(const thensor<T, 3> &img, int pad_rows, int pad_cols, T padding_val = T());
   template<typename T>
@@ -454,7 +454,7 @@ namespace linal
   }
 
   template<typename T>
-  thensor<T, 3> bacward_unroll_image(const thensor<T, 2>& unrolled_img, const std::vector<int>& kernel_shape,
+  thensor<T, 3> backward_unroll_image(const thensor<T, 2>& unrolled_img, const std::vector<int>& kernel_shape,
 	  const std::vector<int>& input_shape, int stride_vert, int stride_hor, int pad_rows, int pad_cols)
   {
 
@@ -476,7 +476,7 @@ namespace linal
 
 
 	  
-	   thensor<T, 3> res = linal::zero_thensor<T,3>(std::vector<int>({i_rows - 2 * pad_rows, i_cols - 2 *pad_cols,channels}));
+	   thensor<T, 3> res = linal::zero_thensor<T,3>(std::vector<int>({i_rows - 2 * pad_rows, i_cols - 2 * pad_cols,channels}));
 	   T* r_data = res.data();
 	   const T* uim_data = unrolled_img.data();
 	   const int line_stride = channels * i_cols;
@@ -493,7 +493,7 @@ namespace linal
 				   {
 					   int input_col = k + n * stride_hor - pad_cols;
 					   if (input_col < 0 || input_col > res.shape()[1])
-						   continue;
+						   continue; 
 					   for (int c = 0; c < channels; c++, uim_data++)
 					   {
 						   *(r_data + c + channels * input_col + line_stride * input_row )=

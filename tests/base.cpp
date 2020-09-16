@@ -11,6 +11,7 @@
 #include <fstream>
 #include <chrono>
 #include <ctime>
+#include<cmath>
 namespace test
 {
   template<typename T , int _dim>
@@ -938,30 +939,30 @@ namespace test
   {
 	  std::cout << "LINAL UNROLL AND BACK  TEST\t";
 	  bool check = false;
-	  for (int i = 0; i < 100; i++)
+	  for (int i = 0; i < 1000; i++)
 	  {
 		  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
 		  std::uniform_int_distribution<int> dist(-1000, 1000);
 		  std::uniform_int_distribution<int> stride_dist(1, 5);
-		  std::uniform_int_distribution<int> channel_dist(1, 100);
+		  std::uniform_int_distribution<int> channel_dist(1, 10);
 		  std::uniform_int_distribution<int> kernel_dist(1, 7);
-		  std::uniform_int_distribution<int> mult_dist(1, 21);
-		  int stride_v = stride_dist(gen);
-		  int stride_h = stride_dist(gen);
-		  int channels = channel_dist(gen);
-		  int filters = channel_dist(gen);
+		  std::uniform_int_distribution<int> mult_dist(1, 20);
 		  int ker_x = kernel_dist(gen);
 		  int ker_y = kernel_dist(gen);
+		  int stride_v = std::min(stride_dist(gen), ker_y);
+		  int stride_h = std::min(stride_dist(gen), ker_x);
+		  int channels = channel_dist(gen);
+		  int filters = channel_dist(gen);
 		  int mul1 = mult_dist(gen);
 		  int mul2 = mult_dist(gen);
-		  std::vector<int> kernel_shape = { channels, filters, ker_x, ker_y };
+		  std::vector<int> kernel_shape = { channels, filters, ker_y, ker_x };
 		  ithensor3 checker({ mul1 * stride_v + kernel_shape[2], mul2 * stride_h + kernel_shape[3] , kernel_shape[0] });
 
 		  
 
 		  fill<int, 3>(checker, [&] {return dist(gen); });
 
-		  check = (checker == linal::bacward_unroll_image(
+		  check = (checker == linal::backward_unroll_image(
 			  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
 			  kernel_shape, checker.shape(), stride_v, stride_h, 0, 0));
 		  if (!check)
@@ -991,17 +992,23 @@ namespace test
   bool linal_unroll_test1(bool verbose )
   {
 	  std::cout << "LINAL UNROLL TEST1 \t";
-	  int stride_v = 1;
+	  int stride_v = 2;
 	  int stride_h = 1;
-	  std::vector<int> kernel_shape = { 2,2,2,1 };
-	  ithensor3 checker({ 1 * stride_v + kernel_shape[2], 1 * stride_h + kernel_shape[3] , kernel_shape[0] });
+	  int channels = 3;
+	  int filters = 2;
+	  int ker_x = 1;
+	  int ker_y = 2;
+	  int mul1 = 1;
+	  int mul2 = 1;
+	  std::vector<int> kernel_shape = { channels, filters, ker_y, ker_x  };
+	  ithensor3 checker({ mul1 * stride_v + kernel_shape[2], mul2 * stride_h + kernel_shape[3] , kernel_shape[0] });
 
 	  bool check = false;
 	  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
 	  std::uniform_int_distribution<int> dist(0, 5);
 	  fill<int, 3>(checker, [&] {return dist(gen); });
 
-	  check = (checker == linal::bacward_unroll_image(
+	  check = (checker == linal::backward_unroll_image(
 		  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
 		  kernel_shape, checker.shape(), stride_v, stride_h, 0, 0));
 
@@ -1009,7 +1016,7 @@ namespace test
 	  {
 		  std::cout << "checker:\n "<<checker << std::endl;
 		  std::cout << "unrolled:\n" << linal::unroll_image(checker, kernel_shape, stride_v, stride_h) << std::endl;
-		  std::cout << "res:\n" << linal::bacward_unroll_image(
+		  std::cout << "res:\n" << linal::backward_unroll_image(
 			  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
 			  kernel_shape, checker.shape(), stride_v, stride_h, 0, 0) << std::endl;
 	  }
@@ -1022,6 +1029,96 @@ namespace test
 		  std::cout << "FAILED" << std::endl;
 	  }
 	  return check;
+  }
+
+  bool linal_conv2d_net(bool verbose)
+  {
+	  std::cout << "CONV2D NET TEST" << std::endl;
+	  int N_train = 30000;
+	  int N_test = 1000;
+	  int size = 20;
+	  int epochs = 100;
+	  int batch_size = 100;
+
+	  /* generate 2D normal distributed data white pixels on black background 
+	  * and try to predict disspersion */
+	  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
+	  std::uniform_real_distribution<float> random(0, 1);
+	  auto normal_vec = [](int size, float m, float sigm)
+	  {
+		  fvec x({ size });
+		  for (int i = 0; i < size; i++)
+		  {
+			  x[i] = std::exp(-(i - m) * (i - m) / (2 * sigm * sigm));
+		  }
+		  return x;
+	  };
+	  auto generate = [&normal_vec, &random, &gen](int size, float x, float y, float sx, float sy)
+	  {
+		  fmat density = linal::matmul(linal::reshape<float, 1, 2>(normal_vec(size, y, sy), { size, 1 }),
+			  linal::reshape<float, 1, 2>(normal_vec(size, x, sx), { 1, size }));
+		  float * density_d = density.data();
+		  for (int i = 0; i < size; i++)
+		  {
+			  for (int j = 0; j < size; j++)
+			  {
+				  *(density_d++) = static_cast<float>(random(gen) < *density_d);
+			  }
+		  }
+		  return density;
+	  };
+	  auto generate_batch = [&generate, &gen, &random](int bathch_size, int size)
+	  {
+		  fthensor2 labels({ bathch_size, 2 });
+		  fthensor3 res({bathch_size,size,size});
+		  for (int i = 0; i < bathch_size; i++)
+		  {
+			  
+			  float x = random(gen) * size;
+			  float y = random(gen) * size;
+			  float sx = random(gen) * size / 2 + 1;
+			  float sy = random(gen) * size / 2 + 1;
+			  labels[i][0] = sx;
+			  labels[i][1] = sy;
+			  res[i] = generate(size, x, y, sx, sy);
+		  }
+		  return std::make_tuple(linal::reshape<float, 3, 4>(res, {bathch_size, size,size, 1} ), labels);
+	  };
+	  auto data_train = generate_batch(N_train, size);
+	  fthensor4 x_train = std::get<0>(data_train);
+	  fthensor2 y_train = std::get<1>(data_train);
+
+	  auto data_test = generate_batch(N_test, size);
+	  fthensor4 x_test = std::get<0>(data_test);
+	  fthensor2 y_test = std::get<1>(data_test);
+	  
+
+	  Sequential net;
+
+	  net.addConv2D<float, float>(1, std::tuple<int, int>{ 5, 5 }, 8, std::tuple<int, int>{ 3, 3 });
+      net.addTanh2D<float, float>();
+	  net.addConv2D<float, float>(8, std::tuple<int, int>{ 3, 3 }, 16);
+	  net.addTanh2D<float, float>();
+	  net.addConv2D<float, float>(16, std::tuple<int, int>{ 3, 3 }, 32);
+	  net.addTanh2D<float, float>();
+	  net.addFlattern4to2<float, float>();
+	  net.addDense1D<float, float>(128, 2);
+
+	  net.set_optimizers(optim::OPTIMIZER_ADAM, 2e-3);
+
+	  MSE<float, float> mse;
+
+	  net.train<fthensor4, fmat, MSE<float, float> >(x_train, y_train, batch_size, epochs, verbose);
+
+	  {
+		  fmat res = net.predict_batch<fthensor4, fmat>(x_train);
+		  std::cout << "\n Train mse:  " << mse(res, y_train) << std::endl;
+	  }
+	  {
+		  fmat res = net.predict_batch<fthensor4, fmat>(x_test);
+		  std::cout << "\n Test mse:  " << mse(res, y_test) << std::endl;
+	  }
+	  return true;
   }
 }
 

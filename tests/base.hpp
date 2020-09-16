@@ -26,5 +26,6 @@ namespace test
   bool linal_conv2d_2_experimental(bool verbose = false);
   bool linal_unroll_and_back(bool verbose = false);
   bool linal_unroll_test1(bool verbose = false);
+  bool linal_conv2d_net(bool verbose = false);
 }
 #endif //LIGHTY_BASE_HPP

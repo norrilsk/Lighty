@@ -22,10 +22,23 @@ private:
 public:
     template <typename S, typename T, typename...  Args>
     void addRelu1D(Args... args);
+	template <typename S, typename T, typename...  Args>
+	void addRelu2D(Args... args);
     template <typename S, typename T, typename...  Args>
     void addSigmoid1D(Args... args);
+	template <typename S, typename T, typename...  Args>
+	void addSigmoid2D(Args... args);
+	template <typename S, typename T, typename...  Args>
+	void addTanh1D(Args... args);
+	template <typename S, typename T, typename...  Args>
+	void addTanh2D(Args... args);
     template <typename S, typename T, typename...  Args>
     void addDense1D(Args... args);
+	template <typename S, typename T, typename...  Args>
+	void addConv2D(Args... args);
+	template <typename S, typename T, typename...  Args>
+	void addFlattern4to2(Args... args);
+
     template<typename T,  typename T2, typename S>
     void train(const T & data, T2& labels, int batch_size, int epochs = 100, bool verbose = false,
         std::function<void(T &)> aug = [](T& _data){}, const S& loss_function  = S());
@@ -45,9 +58,34 @@ void Sequential::addRelu1D(Args... args)
 }
 
 template<typename S, typename T, typename... Args>
+void Sequential::addRelu2D(Args... args)
+{
+	layers.emplace_back(new Relu2D<S, T>(args...));
+}
+
+template<typename S, typename T, typename... Args>
 void Sequential::addSigmoid1D(Args... args)
 {
     layers.emplace_back( new Sigmoid1D<S,T>(args...));
+}
+
+template<typename S, typename T, typename... Args>
+void Sequential::addSigmoid2D(Args... args)
+{
+	layers.emplace_back(new Sigmoid2D<S, T>(args...));
+}
+
+
+template<typename S, typename T, typename... Args>
+void Sequential::addTanh1D(Args... args)
+{
+	layers.emplace_back(new Tanh1D<S, T>(args...));
+}
+
+template<typename S, typename T, typename... Args>
+void Sequential::addTanh2D(Args... args)
+{
+	layers.emplace_back(new Tanh2D<S, T>(args...));
 }
 
 template<typename S, typename T, typename... Args>
@@ -55,6 +93,20 @@ void Sequential::addDense1D(Args... args)
 {
     layers.emplace_back( new Dense1D<S,T>(args...));
 }
+
+
+template<typename S, typename T, typename... Args>
+void Sequential::addConv2D(Args... args)
+{
+	layers.emplace_back(new Conv2D<S, T>(args...));
+}
+
+template<typename S, typename T, typename... Args>
+void Sequential::addFlattern4to2(Args... args)
+{
+	layers.emplace_back(new Flattern4to2<S, T>(args...));
+}
+
 
 template<typename T,  typename T2, typename S>
 void Sequential::train(const T & data, T2& labels, int batch_size,
@@ -141,7 +193,7 @@ Tret Sequential::predict_batch(const T &data)
     {
         x = &(layer->forward(*x));
     }
-    const T& answer = dynamic_cast<const T&>(*x);
+    const Tret& answer = dynamic_cast<const Tret&>(*x);
     return answer;
 }
 void Sequential::set_optimizers(optim::optimizer_t type, float lr)
