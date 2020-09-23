@@ -12,16 +12,18 @@
 #include <chrono>
 #include <ctime>
 #include<cmath>
+#include <iostream>
+
 namespace test
 {
-  template<typename T , int _dim>
+  template<typename T , int32_t _dim>
   void fill(linal::thensor<T,_dim> &th, std::function<T()> initializer);
   
-  template<typename T, int _dim>
+  template<typename T, int32_t _dim>
   void fill(linal::thensor<T, _dim> &th, std::function<T()> initializer)
   {
 	T* ptr = th.data();
-	for (int i = 0; i < th.size(); i++)
+	for (int32_t i = 0; i < th.size(); i++)
 	{
 		ptr[i] = initializer();
 	}
@@ -53,7 +55,7 @@ namespace test
         x[7][0] = 3;
         x[8][0] = 4;
         
-        int N = 1000;
+        int32_t N = 1000;
         Sequential net;
         net.addDense1D<float,float>(1,N);
         net.addRelu1D<float,float>();
@@ -89,7 +91,7 @@ namespace test
 			fmat res = net.predict_batch<fmat, fmat>(x);
             if (verbose)
             {
-                for (int i = 0; i < 9; ++i)
+                for (int32_t i = 0; i < 9; ++i)
                 {
                     std::cout << res[i][0] << "|" << y[i] << "; ";
                 }
@@ -100,7 +102,7 @@ namespace test
 			fmat res = net.predict_batch<fmat, fmat>(xt);
             if (verbose)
             {
-                for (int i = 0; i < 8; ++i)
+                for (int32_t i = 0; i < 8; ++i)
                 {
                     std::cout << res[i][0] << "|" << yt[i] << "; ";
                 }
@@ -135,14 +137,14 @@ namespace test
 		x[7][0] = 3;
 		x[8][0] = 4;
 
-		int N = 1000;
+		int32_t N = 1000;
 		Dense1D<float, float> f1(1, N);
 		Relu1D<float, float> relu;
 		Dense1D<float, float> f2(N, 1);
 		MSE<float, float> mse;
 
 		//fvec res(1), delta2(1), delta1(N), delta0(1);
-		for (int ep = 0; ep < 10000; ++ep)
+		for (int32_t ep = 0; ep < 10000; ++ep)
 		{
 			float tmse = 0;
 			auto&& hidden = f1.forward(x);
@@ -193,7 +195,7 @@ namespace test
 			//std::cout <<"res: " << res << std::endl;
 			if (verbose)
 			{
-				for (int i = 0; i < 9; ++i)
+				for (int32_t i = 0; i < 9; ++i)
 				{
 					std::cout << res[i][0] << "|" << y[i] << "; ";
 				}
@@ -209,7 +211,7 @@ namespace test
 			//std::cout <<"res: " << res << std::endl;
 			if (verbose)
 			{
-				for (int i = 0; i < 8; ++i)
+				for (int32_t i = 0; i < 8; ++i)
 				{
 					std::cout << res[i][0] << "|" << yt[i] << "; ";
 				}
@@ -220,11 +222,11 @@ namespace test
 	}
 	bool matmul3x3(bool verbose)
 	{
-		std::cout << "MATMUL TEST 3x3 int" << std::endl;
-		int l[3][3] = { {5,6,-1},{8,12,22},{11,-1,3024} };
-		int m[3][3] = { {22,65,11},{-5,-88,-93},{75,0,42} };
-		int r[3][3] = { {5,-203,-545},{1766,-536,-104},{227047,803,127222} };
-		linal::thensor<int, 2> L, M, R_true, R_pred;
+		std::cout << "MATMUL TEST 3x3 int32_t" << std::endl;
+		int32_t l[3][3] = { {5,6,-1},{8,12,22},{11,-1,3024} };
+		int32_t m[3][3] = { {22,65,11},{-5,-88,-93},{75,0,42} };
+		int32_t r[3][3] = { {5,-203,-545},{1766,-536,-104},{227047,803,127222} };
+		linal::thensor<int32_t, 2> L, M, R_true, R_pred;
 		L.wrap(&l[0][0], { 3,3 });
 		M.wrap(&m[0][0], { 3,3 });
 		R_true.wrap(&r[0][0], { 3,3 });
@@ -256,7 +258,7 @@ namespace test
     		 xt({100,1}), yt({100,1});
 		static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
 		std::uniform_real_distribution<float> distribution{-3.141592f,3.141592f};
-    	for (int i = 0 ; i < 100 ; i++)
+    	for (int32_t i = 0 ; i < 100 ; i++)
 		{
     		x[i][0] = distribution(generator);
     		y[i][0] = std::sin(x[i][0]);
@@ -264,9 +266,9 @@ namespace test
 			yt[i][0] = std::sin(xt[i][0]);
 		}
 		Sequential net;
-    	int N1 = 50;
-    	int N2 = 500;
-    	int N3 = 100;
+    	int32_t N1 = 50;
+    	int32_t N2 = 500;
+    	int32_t N3 = 100;
     	net.addDense1D<float,float>(1,N1);
     	net.addRelu1D<float,float>();
     	net.addDense1D<float,float>(N1,N2);
@@ -282,7 +284,7 @@ namespace test
 			fmat res = net.predict_batch<fmat, fmat>(x);
 			if (verbose)
 			{
-				for (int i = 0; i < 10; ++i)
+				for (int32_t i = 0; i < 10; ++i)
 				{
 					std::cout << res[i][0] << "|" << y[i] << "; ";
 				}
@@ -293,7 +295,7 @@ namespace test
 			fmat res = net.predict_batch<fmat, fmat>(xt);
 			if (verbose)
 			{
-				for (int i = 0; i < 10; ++i)
+				for (int32_t i = 0; i < 10; ++i)
 				{
 					std::cout << res[i][0] << "|" << yt[i] << "; ";
 				}
@@ -305,12 +307,12 @@ namespace test
 	
 	bool sequention_net(bool verbose)
 	{
-		int Npoints = 10000;
+		int32_t Npoints = 10000;
 		fmat x({Npoints,2}), y({Npoints,1}),
 			xt({Npoints,2}), yt({Npoints,1});
 		static std::default_random_engine generator(static_cast<unsigned>(time(nullptr))+ 42 );
 		std::uniform_real_distribution<float> distribution{-1.f,1.f};
-		for (int i = 0 ; i < Npoints ; i++)
+		for (int32_t i = 0 ; i < Npoints ; i++)
 		{
 			float x1 = distribution(generator),
 			      x2 = distribution(generator);
@@ -325,11 +327,11 @@ namespace test
 			yt[i][0] = ((x1*x1 + x2*x2) < 1.f) ? 1.f : 0.f;
 		}
 		Sequential net;
-		int N1 = 40;
-		int N2 = 30;
-		int N3 = 20;
-		int N4 = 30;
-		int N5 = 40;
+		int32_t N1 = 40;
+		int32_t N2 = 30;
+		int32_t N3 = 20;
+		int32_t N4 = 30;
+		int32_t N5 = 40;
 		net.addDense1D<float,float>(2,N1);
 		net.addRelu1D<float,float>();
 		net.addDense1D<float,float>(N1,N2);
@@ -349,7 +351,7 @@ namespace test
 		fmat ans = net.predict_batch<fmat, fmat>(x);
 		if (verbose)
 		{
-			for (int i = 0 ; i < 10; i++)
+			for (int32_t i = 0 ; i < 10; i++)
 			{
 					std::cout<<"("<< x[i][0]<<';'<<x[i][1]<<") " << ans[i] << " | " << y[i][0] <<";  ";
 			}
@@ -357,7 +359,7 @@ namespace test
 			std::cout << "MSE train " << mse(ans, y) << "\n";
 			
 			ans = net.predict_batch<fmat, fmat>(xt);
-			for (int i = 0 ; i < 10; i++)
+			for (int32_t i = 0 ; i < 10; i++)
 			{
 				std::cout<<"("<< xt[i][0]<<';'<<xt[i][1]<<") " << ans[i] << " | " << yt[i][0] <<";  ";
 			}
@@ -371,8 +373,8 @@ namespace test
 	bool thensor_test1(bool verbose)
 	{
 		std::cout << "THENSOR TEST 1\t";
-		linal::thensor<int,1> vec({3});
-		linal::thensor<int,2> mat({3,3});
+		linal::thensor<int32_t,1> vec({3});
+		linal::thensor<int32_t,2> mat({3,3});
 		vec[0] = 0;
 		vec[1] = 1;
 		vec[2] = 2;
@@ -403,8 +405,8 @@ namespace test
 		{
 			std::cout << "\n\nvec = mat[0] \n vec[0] = 22\nmat[0][1] = 33 ";
 		}
-		linal::thensor<int, 1> vec_checker({ 3 });
-		linal::thensor<int, 2> mat_checker({ 3,3 });
+		linal::thensor<int32_t, 1> vec_checker({ 3 });
+		linal::thensor<int32_t, 2> mat_checker({ 3,3 });
 		vec_checker[0] = 22;
 		vec_checker[1] = 33;
 		vec_checker[2] = 5;
@@ -444,8 +446,8 @@ namespace test
 	bool thensor_test2(bool verbose)
 	{
 		std::cout << "THENSOR TEST 2\t";
-		linal::thensor<int, 1> vec({ 3 });
-		linal::thensor<int, 2> mat({ 3,3 });
+		linal::thensor<int32_t, 1> vec({ 3 });
+		linal::thensor<int32_t, 2> mat({ 3,3 });
 		vec[0] = 0;
 		vec[1] = 1;
 		vec[2] = 2;
@@ -476,8 +478,8 @@ namespace test
 		{
 			std::cout << "\n\nvec = mat[0].copy() \n vec[0] = 22\nmat[0][1] = 33 ";
 		}
-		linal::thensor<int, 1> vec_checker({ 3 });
-		linal::thensor<int, 2> mat_checker({ 3,3 });
+		linal::thensor<int32_t, 1> vec_checker({ 3 });
+		linal::thensor<int32_t, 2> mat_checker({ 3,3 });
 		vec_checker[0] = 22;
 		vec_checker[1] = 4;
 		vec_checker[2] = 5;
@@ -517,8 +519,8 @@ namespace test
 	bool thensor_test3(bool verbose)
 	{
 		std::cout << "THENSOR TEST 3\t";
-		linal::thensor<int, 1> vec({ 3 });
-		linal::thensor<int, 2> mat({ 3,3 });
+		linal::thensor<int32_t, 1> vec({ 3 });
+		linal::thensor<int32_t, 2> mat({ 3,3 });
 		vec[0] = 0;
 		vec[1] = 1;
 		vec[2] = 2;
@@ -549,8 +551,8 @@ namespace test
 		{
 			std::cout << "\n\nmat[0] = vec\n vec[0] = 22\nmat[0][1] = 33 ";
 		}
-		linal::thensor<int, 1> vec_checker({ 3 });
-		linal::thensor<int, 2> mat_checker({ 3,3 });
+		linal::thensor<int32_t, 1> vec_checker({ 3 });
+		linal::thensor<int32_t, 2> mat_checker({ 3,3 });
 		vec_checker[0] = 22;
 		vec_checker[1] = 1;
 		vec_checker[2] = 2;
@@ -590,8 +592,8 @@ namespace test
 	bool thensor_test4(bool verbose)
 	{
 		std::cout << "THENSOR TEST 4\t";
-		linal::thensor<int, 1> vec({ 3 });
-		linal::thensor<int, 2> mat({ 3,3 });
+		linal::thensor<int32_t, 1> vec({ 3 });
+		linal::thensor<int32_t, 2> mat({ 3,3 });
 		vec[0] = 0;
 		vec[1] = 1;
 		vec[2] = 2;
@@ -622,8 +624,8 @@ namespace test
 		{
 			std::cout << "\n\nmat[0] = vec.copy() \n vec[0] = 22\nmat[0][1] = 33 ";
 		}
-		linal::thensor<int, 1> vec_checker({ 3 });
-		linal::thensor<int, 2> mat_checker({ 3,3 });
+		linal::thensor<int32_t, 1> vec_checker({ 3 });
+		linal::thensor<int32_t, 2> mat_checker({ 3,3 });
 		vec_checker[0] = 22;
 		vec_checker[1] = 1;
 		vec_checker[2] = 2;
@@ -663,7 +665,7 @@ namespace test
     bool linal_conv2d(bool verbose )
     {
         std::cout << "CONVOLUTION TEST 1\t";
-        linal::thensor<int,2> mat({3,3});
+        linal::thensor<int32_t,2> mat({3,3});
         mat[0][0] = 3;
         mat[0][1] = 4;
         mat[0][2] = 5;
@@ -676,7 +678,7 @@ namespace test
         mat[2][1] = 10;
         mat[2][2] = 11;
     
-        linal::thensor<int,2> kernel({2,2});
+        linal::thensor<int32_t,2> kernel({2,2});
         
         kernel[0][0] = 1;
         kernel[0][1] = 2;
@@ -684,13 +686,13 @@ namespace test
         kernel[1][1] = 3;
         
 
-        linal::thensor<int,2> checker({2,2});
+        linal::thensor<int32_t,2> checker({2,2});
         checker[0][0] = 26;
         checker[0][1] = 31;
         checker[1][0] = 41;
         checker[1][1] = 46;
         bool check = false;
-        linal::thensor<int,2> res = linal::conv2d(mat,kernel);
+        linal::thensor<int32_t,2> res = linal::conv2d(mat,kernel);
         check = res==checker;
         if (verbose)
         {
@@ -711,7 +713,7 @@ namespace test
 	bool linal_conv2d_2(bool verbose)
 	{
 		std::cout << "CONVOLUTION TEST 2\t";
-		linal::thensor<int, 2> mat({ 3,3 });
+		linal::thensor<int32_t, 2> mat({ 3,3 });
 		mat[0][0] = 3;
 		mat[0][1] = 4;
 		mat[0][2] = 5;
@@ -724,7 +726,7 @@ namespace test
 		mat[2][1] = 10;
 		mat[2][2] = 11;
 
-		linal::thensor<int, 2> kernel({ 2,2 });
+		linal::thensor<int32_t, 2> kernel({ 2,2 });
 
 		kernel[0][0] = 1;
 		kernel[0][1] = 2;
@@ -732,13 +734,13 @@ namespace test
 		kernel[1][1] = 3;
 
 
-		linal::thensor<int, 2> checker({ 2,2 });
+		linal::thensor<int32_t, 2> checker({ 2,2 });
 		checker[0][0] = 9;
 		checker[0][1] = 11;
 		checker[1][0] = 39;
 		checker[1][1] = 46;
 		bool check = false;
-		linal::thensor<int, 2> res = linal::conv2d(mat, kernel,2,1,0);
+		linal::thensor<int32_t, 2> res = linal::conv2d(mat, kernel,2,1,0);
 		check = res == checker;
 		if (verbose)
 		{
@@ -759,7 +761,7 @@ namespace test
   bool linal_conv2d_3(bool verbose)
   {
 	  std::cout << "CONVOLUTION TEST 3\t";
-	  linal::thensor<int, 3> mat({ 3,3,3});
+	  linal::thensor<int32_t, 3> mat({ 3,3,3});
 	  mat[0][0][0] = 1;   mat[0][1][0] = 2;   mat[0][2][0] = 0;
 	  mat[1][0][0] = 1;   mat[1][1][0] = 1;   mat[1][2][0] = 3;
 	  mat[2][0][0] = 0;   mat[2][1][0] = 2;   mat[2][2][0] = 2;
@@ -774,7 +776,7 @@ namespace test
 	  
 	  
 	  //input channels,  rows , cols output_channels,
-	  linal::thensor<int, 4> kernel({ 3, 2, 2, 2 });
+	  linal::thensor<int32_t, 4> kernel({ 3, 2, 2, 2 });
 	  
 	  kernel[0][0][0][0] = 1;   kernel[0][0][0][1] = 1;
 	  kernel[0][0][1][0] = 2;   kernel[0][0][1][1] = 2;
@@ -796,7 +798,7 @@ namespace test
 	  kernel[2][1][0][0] = 1;   kernel[2][1][0][1] = 2;
 	  kernel[2][1][1][0] = 2;   kernel[2][1][1][1] = 0;
 	  
-	  linal::thensor<int, 3> checker({ 2, 2, 2});
+	  linal::thensor<int32_t, 3> checker({ 2, 2, 2});
 	  
 	  checker[0][0][0] = 14;   checker[0][1][0] = 20;
 	  checker[1][0][0] = 15;   checker[1][1][0] = 24;
@@ -804,7 +806,7 @@ namespace test
 	  checker[0][0][1] = 12;   checker[0][1][1] = 24;
 	  checker[1][0][1] = 17;   checker[1][1][1] = 26;
 	  bool check = false;
-	  linal::thensor<int, 3> res = linal::conv2d(mat, kernel);
+	  linal::thensor<int32_t, 3> res = linal::conv2d(mat, kernel);
 	  check = res == checker;
 	  if (verbose)
 	  {
@@ -823,19 +825,19 @@ namespace test
   bool linal_conv_unroll(bool verbose)
   {
 	  std::cout << "UNROLL TEST\t";
-	  linal::thensor<int, 2> mat({ 3,3});
+	  linal::thensor<int32_t, 2> mat({ 3,3});
 	  mat[0][0] = 1;   mat[0][1] = 2;   mat[0][2] = 0;
 	  mat[1][0] = 1;   mat[1][1] = 1;   mat[1][2] = 3;
 	  mat[2][0] = 0;   mat[2][1] = 2;   mat[2][2] = 2;
 	
-	  linal::thensor<int, 2> checker({ 4,4});
+	  linal::thensor<int32_t, 2> checker({ 4,4});
 	  checker[0][0] = 1;   checker[0][1] = 2;   checker[0][2] = 1;   checker[0][3] = 1;
 	  checker[1][0] = 2;   checker[1][1] = 0;   checker[1][2] = 1;   checker[1][3] = 3;
 	  checker[2][0] = 1;   checker[2][1] = 1;   checker[2][2] = 0;   checker[2][3] = 2;
 	  checker[3][0] = 1;   checker[3][1] = 3;   checker[3][2] = 2;   checker[3][3] = 2;
 	
 	  bool check = false;
-	  linal::thensor<int, 2> res = linal::unroll_image( mat,2, 2, 1,1);
+	  linal::thensor<int32_t, 2> res = linal::unroll_image( mat,2, 2, 1,1);
 	  check = res == checker;
 	  if (verbose)
 	  {
@@ -855,14 +857,14 @@ namespace test
   bool linal_conv2d_experimental(bool verbose)
   {
 	    std::cout << "CONVOLUTION EXPERIMENTAL TEST 1\t";
-  		linal::thensor<int,2> src({50,50});
-    	linal::thensor<int,2> kernel({7,7});
-    	linal::thensor<int,2> res1, checker;
+  		linal::thensor<int32_t,2> src({50,50});
+    	linal::thensor<int32_t,2> kernel({7,7});
+    	linal::thensor<int32_t,2> res1, checker;
     	
     	std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
-    	std::uniform_int_distribution<int> dist(-100,100);
-    	fill<int,2>(src, [&]{return dist(gen);});
-    	fill<int,2>(kernel, [&]{return dist(gen);});
+    	std::uniform_int_distribution<int32_t> dist(-100,100);
+    	fill<int32_t,2>(src, [&]{return dist(gen);});
+    	fill<int32_t,2>(kernel, [&]{return dist(gen);});
     	auto start = std::chrono::high_resolution_clock::now();
     	checker = linal::depricated::conv2d(src,kernel,2,3,4);
     	auto p1 = std::chrono::high_resolution_clock::now();
@@ -898,14 +900,14 @@ namespace test
   bool linal_conv2d_2_experimental(bool verbose)
   {
 	  std::cout << "CONVOLUTION EXPERIMENTAL TEST 2\t";
-      linal::thensor<int,3> src({128,128,10});
-      linal::thensor<int,4> kernel({10,20,3,3});
-      linal::thensor<int,3> res1, checker;
+      linal::thensor<int32_t,3> src({128,128,10});
+      linal::thensor<int32_t,4> kernel({10,20,3,3});
+      linal::thensor<int32_t,3> res1, checker;
       
       std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
-      std::uniform_int_distribution<int> dist(-100,100);
-      fill<int,3>(src, [&]{return dist(gen);});
-      fill<int,4>(kernel, [&]{return dist(gen);});
+      std::uniform_int_distribution<int32_t> dist(-100,100);
+      fill<int32_t,3>(src, [&]{return dist(gen);});
+      fill<int32_t,4>(kernel, [&]{return dist(gen);});
       auto start = std::chrono::high_resolution_clock::now();
       checker = linal::depricated::conv2d(src,kernel,2,3,4);
       auto p1 = std::chrono::high_resolution_clock::now();
@@ -939,28 +941,28 @@ namespace test
   {
 	  std::cout << "LINAL UNROLL AND BACK  TEST\t";
 	  bool check = false;
-	  for (int i = 0; i < 1000; i++)
+	  for (int32_t i = 0; i < 1000; i++)
 	  {
 		  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
-		  std::uniform_int_distribution<int> dist(-1000, 1000);
-		  std::uniform_int_distribution<int> stride_dist(1, 5);
-		  std::uniform_int_distribution<int> channel_dist(1, 10);
-		  std::uniform_int_distribution<int> kernel_dist(1, 7);
-		  std::uniform_int_distribution<int> mult_dist(1, 20);
-		  int ker_x = kernel_dist(gen);
-		  int ker_y = kernel_dist(gen);
-		  int stride_v = std::min(stride_dist(gen), ker_y);
-		  int stride_h = std::min(stride_dist(gen), ker_x);
-		  int channels = channel_dist(gen);
-		  int filters = channel_dist(gen);
-		  int mul1 = mult_dist(gen);
-		  int mul2 = mult_dist(gen);
-		  std::vector<int> kernel_shape = { channels, filters, ker_y, ker_x };
+		  std::uniform_int_distribution<int32_t> dist(-1000, 1000);
+		  std::uniform_int_distribution<int32_t> stride_dist(1, 5);
+		  std::uniform_int_distribution<int32_t> channel_dist(1, 10);
+		  std::uniform_int_distribution<int32_t> kernel_dist(1, 7);
+		  std::uniform_int_distribution<int32_t> mult_dist(1, 20);
+		  int32_t ker_x = kernel_dist(gen);
+		  int32_t ker_y = kernel_dist(gen);
+		  int32_t stride_v = std::min(stride_dist(gen), ker_y);
+		  int32_t stride_h = std::min(stride_dist(gen), ker_x);
+		  int32_t channels = channel_dist(gen);
+		  int32_t filters = channel_dist(gen);
+		  int32_t mul1 = mult_dist(gen);
+		  int32_t mul2 = mult_dist(gen);
+		  std::vector<int32_t> kernel_shape = { channels, filters, ker_y, ker_x };
 		  ithensor3 checker({ mul1 * stride_v + kernel_shape[2], mul2 * stride_h + kernel_shape[3] , kernel_shape[0] });
 
 		  
 
-		  fill<int, 3>(checker, [&] {return dist(gen); });
+		  fill<int32_t, 3>(checker, [&] {return dist(gen); });
 
 		  check = (checker == linal::backward_unroll_image(
 			  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
@@ -992,21 +994,21 @@ namespace test
   bool linal_unroll_test1(bool verbose )
   {
 	  std::cout << "LINAL UNROLL TEST1 \t";
-	  int stride_v = 2;
-	  int stride_h = 1;
-	  int channels = 3;
-	  int filters = 2;
-	  int ker_x = 1;
-	  int ker_y = 2;
-	  int mul1 = 1;
-	  int mul2 = 1;
-	  std::vector<int> kernel_shape = { channels, filters, ker_y, ker_x  };
+	  int32_t stride_v = 2;
+	  int32_t stride_h = 1;
+	  int32_t channels = 3;
+	  int32_t filters = 2;
+	  int32_t ker_x = 1;
+	  int32_t ker_y = 2;
+	  int32_t mul1 = 1;
+	  int32_t mul2 = 1;
+	  std::vector<int32_t> kernel_shape = { channels, filters, ker_y, ker_x  };
 	  ithensor3 checker({ mul1 * stride_v + kernel_shape[2], mul2 * stride_h + kernel_shape[3] , kernel_shape[0] });
 
 	  bool check = false;
 	  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
-	  std::uniform_int_distribution<int> dist(0, 5);
-	  fill<int, 3>(checker, [&] {return dist(gen); });
+	  std::uniform_int_distribution<int32_t> dist(0, 5);
+	  fill<int32_t, 3>(checker, [&] {return dist(gen); });
 
 	  check = (checker == linal::backward_unroll_image(
 		  linal::unroll_image(checker, kernel_shape, stride_v, stride_h),
@@ -1034,44 +1036,44 @@ namespace test
   bool linal_conv2d_net(bool verbose)
   {
 	  std::cout << "CONV2D NET TEST" << std::endl;
-	  int N_train = 30000;
-	  int N_test = 1000;
-	  int size = 20;
-	  int epochs = 100;
-	  int batch_size = 100;
+	  int32_t N_train = 30000;
+	  int32_t N_test = 1000;
+	  int32_t size = 20;
+	  int32_t epochs = 100;
+	  int32_t batch_size = 100;
 
 	  /* generate 2D normal distributed data white pixels on black background 
 	  * and try to predict disspersion */
 	  std::default_random_engine gen(static_cast<unsigned long>(std::time(nullptr)));
 	  std::uniform_real_distribution<float> random(0, 1);
-	  auto normal_vec = [](int size, float m, float sigm)
+	  auto normal_vec = [](int32_t size, float m, float sigm)
 	  {
 		  fvec x({ size });
-		  for (int i = 0; i < size; i++)
+		  for (int32_t i = 0; i < size; i++)
 		  {
 			  x[i] = std::exp(-(i - m) * (i - m) / (2 * sigm * sigm));
 		  }
 		  return x;
 	  };
-	  auto generate = [&normal_vec, &random, &gen](int size, float x, float y, float sx, float sy)
+	  auto generate = [&normal_vec, &random, &gen](int32_t size, float x, float y, float sx, float sy)
 	  {
 		  fmat density = linal::matmul(linal::reshape<float, 1, 2>(normal_vec(size, y, sy), { size, 1 }),
 			  linal::reshape<float, 1, 2>(normal_vec(size, x, sx), { 1, size }));
 		  float * density_d = density.data();
-		  for (int i = 0; i < size; i++)
+		  for (int32_t i = 0; i < size; i++)
 		  {
-			  for (int j = 0; j < size; j++)
+			  for (int32_t j = 0; j < size; j++)
 			  {
 				  *(density_d++) = static_cast<float>(random(gen) < *density_d);
 			  }
 		  }
 		  return density;
 	  };
-	  auto generate_batch = [&generate, &gen, &random](int bathch_size, int size)
+	  auto generate_batch = [&generate, &gen, &random](int32_t bathch_size, int32_t size)
 	  {
 		  fthensor2 labels({ bathch_size, 2 });
 		  fthensor3 res({bathch_size,size,size});
-		  for (int i = 0; i < bathch_size; i++)
+		  for (int32_t i = 0; i < bathch_size; i++)
 		  {
 			  
 			  float x = random(gen) * size;
@@ -1095,11 +1097,11 @@ namespace test
 
 	  Sequential net;
 
-	  net.addConv2D<float, float>(1, std::tuple<int, int>{ 5, 5 }, 8, std::tuple<int, int>{ 3, 3 });
+	  net.addConv2D<float, float>(1, std::tuple<int32_t, int32_t>{ 5, 5 }, 8, std::tuple<int32_t, int32_t>{ 3, 3 });
       net.addTanh2D<float, float>();
-	  net.addConv2D<float, float>(8, std::tuple<int, int>{ 3, 3 }, 16);
+	  net.addConv2D<float, float>(8, std::tuple<int32_t, int32_t>{ 3, 3 }, 16);
 	  net.addTanh2D<float, float>();
-	  net.addConv2D<float, float>(16, std::tuple<int, int>{ 3, 3 }, 32);
+	  net.addConv2D<float, float>(16, std::tuple<int32_t, int32_t>{ 3, 3 }, 32);
 	  net.addTanh2D<float, float>();
 	  net.addFlattern4to2<float, float>();
 	  net.addDense1D<float, float>(128, 2);
@@ -1119,6 +1121,105 @@ namespace test
 		  std::cout << "\n Test mse:  " << mse(res, y_test) << std::endl;
 	  }
 	  return true;
+  }
+
+  bool dump_up(bool verbose)
+  {
+	  std::cout << "DUMP AND LOAD TEST TEST1 \t";
+	  fmat x({ 100,1 }), y({ 100,1 }),
+		  xt({ 100,1 }), yt({ 100,1 });
+	  static std::default_random_engine generator(static_cast<unsigned>(time(nullptr)) + 42);
+	  std::uniform_real_distribution<float> distribution{ -3.141592f,3.141592f };
+	  for (int32_t i = 0; i < 100; i++)
+	  {
+		  x[i][0] = distribution(generator);
+		  y[i][0] = std::sin(x[i][0]);
+		  xt[i][0] = distribution(generator);
+		  yt[i][0] = std::sin(xt[i][0]);
+	  }
+	  Sequential net;
+	  int32_t N1 = 50;
+	  int32_t N2 = 500;
+	  int32_t N3 = 100;
+	  net.addDense1D<float, float>(1, N1);
+	  net.addRelu1D<float, float>();
+	  net.addDense1D<float, float>(N1, N2);
+	  net.addRelu1D<float, float>();
+	  net.addDense1D<float, float>(N2, N3);
+	  net.addSigmoid1D<float, float>();
+	  net.addDense1D<float, float>(N3, 1);
+
+	  net.set_optimizers(optim::OPTIMIZER_ADAM, 2e-3);
+	  net.train<fmat, fmat, MSE<float, float> >(x, y, 10, 10, verbose);
+	  std::ofstream file("TMPTEST1123747.net", std::ios::binary);
+	  net.dump(file);
+	  file.close();
+	  MSE<float, float> mse;
+	  
+      fmat res_before_1 = net.predict_batch<fmat, fmat>(x);
+	  if (verbose)
+	  {
+		  for (int32_t i = 0; i < 10; ++i)
+		  {
+			  std::cout << res_before_1[i][0] << "|" << y[i] << "; ";
+		  }
+		  std::cout << "\n Train mse before loading :  " << mse(res_before_1, y) << std::endl;
+	  }
+      
+        
+        
+      fmat res_before_2 = net.predict_batch<fmat, fmat>(xt);
+	  if (verbose)
+	  {
+		  for (int32_t i = 0; i < 10; ++i)
+		  {
+			  std::cout << res_before_2[i][0] << "|" << yt[i] << "; ";
+		  }
+		  std::cout << "\n Test mse: before loading  " << mse(res_before_2, yt) << std::endl;
+	  }
+     
+    	  
+
+	  Sequential net2;
+	  std::ifstream ifile("TMPTEST1123747.net", std::ios::binary);
+	  net2.load(ifile);
+	  ifile.close();
+	  std::remove("TMPTEST1123747.net");
+	  
+	  
+	  
+		fmat res1 = net2.predict_batch<fmat, fmat>(x);
+		if (verbose)
+		{
+			for (int32_t i = 0; i < 10; ++i)
+			{
+				std::cout << res1[i][0] << "|" << y[i] << "; ";
+			}
+			std::cout << "\n Train mse after loading :  " << mse(res1, y) << std::endl;
+		}
+		
+	  
+	  
+		fmat res2 = net2.predict_batch<fmat, fmat>(xt);
+		if (verbose)
+		{
+			for (int32_t i = 0; i < 10; ++i)
+			{
+				std::cout << res2[i][0] << "|" << yt[i] << "; ";
+			}
+			std::cout << "\n Test mse: after loading  " << mse(res2, yt) << std::endl;
+		}
+		
+		bool check = std::abs(mse(res_before_2, yt) - mse(res2, yt)) < 1e-3;
+		if (check)
+		{
+			std::cout << "OK" << std::endl;
+		}
+		else
+		{
+			std::cout << "FAILED" << std::endl;
+		}
+		return check;
   }
 }
 

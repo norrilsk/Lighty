@@ -29,9 +29,9 @@ template<typename T, typename S>
 T MSE<T, S>::operator()(const linal::thensor<S, 2>& prediction, const linal::thensor<S, 2>& label) const
 {
     linal::thensor<S,2> delta = prediction - label;
-    int batch_size = delta.shape()[0];
+    int32_t batch_size = delta.shape()[0];
     S res = 0;
-    for (int i = 0 ; i < batch_size ; i++)
+    for (int32_t i = 0 ; i < batch_size ; i++)
     {
         res+= delta[i].dot(delta[i]);
     }

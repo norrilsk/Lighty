@@ -117,7 +117,7 @@ namespace optim
 	  float _beta = 0.9;
 	  float _acum_alpha, _acum_beta;
 	  float _e = 1e-6;
-	  int _iteration = 1;
+	  int32_t _iteration = 1;
 	  T _mean_grad;
 	  typename T::d_type _mean_square_grad = typename T::d_type();
   public:
